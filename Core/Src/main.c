@@ -32,13 +32,16 @@ static void MX_USART2_UART_Init(void);
 
 static size_t time_quantum;
 
-void  SET_TIME_QUANTUM(size_t req) {
-    time_quantum = req;
+void SET_TIME_QUANTUM(uint32_t req_ms) {
+    if (req_ms == 0) req_ms = 1; 
 
-    uint32_t new_period = (uint32_t)(req * 1000U) - 1U;
+    time_quantum = req_ms;
+    
+    uint32_t new_period = (req_ms * 1000U) - 1U;
 
     __HAL_TIM_SET_AUTORELOAD(&htim2, new_period);
 }
+
 
 /**
  * @brief TIM2 Initialization Function for 10ms interrupt
@@ -52,19 +55,21 @@ static void MX_TIM2_Init(void)
 
     __HAL_RCC_TIM2_CLK_ENABLE();
 
-    uwTimclock = HAL_RCC_GetPCLK1Freq();
+    if ((RCC->CFGR & RCC_CFGR_PPRE1) == 0) {
+        uwTimclock = HAL_RCC_GetPCLK1Freq();
+    } else {
+        uwTimclock = HAL_RCC_GetPCLK1Freq() * 2;
+    }
 
     uwPrescalerValue = (uint32_t)((uwTimclock / 1000000U) - 1U);
 
     htim2.Instance = TIM2;
-    // htim2.Init.Period = (1000000U / 100U) - 1U; 
-    // 10ms
-    htim2.Init.Period = (10000000U / 10U) - 1U;
+    htim2.Init.Period = (1000000U / 100U) - 1U; 
 
     htim2.Init.Prescaler = uwPrescalerValue;
     htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 
     if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
     {
