@@ -24,5 +24,5 @@ export fn entry() callconv(.c) void {
 
     sched.register(foo, 'F');
 
-    while (true) {}
+    sched.start();
 }
