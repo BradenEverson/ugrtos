@@ -1,5 +1,4 @@
 //! Discrete Q-Table Bins for CPU utilization percents
-
 const std = @import("std");
 
 /// Learning Rate
@@ -27,7 +26,7 @@ pub const QAgent = extern struct {
     }
 
     /// Actions the agent can take
-    const Action = enum { Shorten, Keep, Lengthen };
+    const Action = enum(u8) { Shorten, Keep, Lengthen };
     const NumActions = @typeInfo(Action).@"enum".fields.len;
 
     q_table: [BUCKETS][NumActions]f32 = std.mem.zeroes([BUCKETS][NumActions]f32),

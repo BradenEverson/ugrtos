@@ -1,6 +1,6 @@
 //! Task definition
 
-const QAgent = @import("q_agent.zig");
+const QAgent = @import("q_agent.zig").QAgent;
 
 /// Number of tasks we support at a time
 pub const MAX_TASKS: usize = 10;
