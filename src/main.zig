@@ -21,6 +21,7 @@ fn foo() void {
 
 export fn entry() callconv(.c) void {
     var sched = scheduler.Scheduler{};
+    c.SET_TIME_DELTA(1000);
 
     sched.register(foo, 'F');
 

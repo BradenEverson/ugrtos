@@ -3,6 +3,12 @@
 const task = @import("task.zig");
 const Task = task.Task;
 
+const c = @cImport({
+    @cDefine("USE_HAL_DRIVER", {});
+    @cDefine("STM32F446xx", {});
+    @cInclude("main.h");
+});
+
 pub inline fn disable_irq() void {
     asm volatile ("cpsid i" ::: .{ .memory = true });
 }
@@ -32,6 +38,9 @@ pub const Scheduler = struct {
         _ = self;
         disable_irq();
 
+        c.SCHEDULER_ENABLE_IT();
+
+        // Call the start asm fn
         while (true) {}
 
         unreachable;

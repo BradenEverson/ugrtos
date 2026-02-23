@@ -82,8 +82,18 @@ static void MX_TIM2_Init(void)
     }
 
     HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+    // We'll call this when the scheduler begins
+    // HAL_NVIC_EnableIRQ(TIM2_IRQn);
 };
+
+void SCHEDULER_ENABLE_IT() {
+    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+}
+
+void SCHEDULER_DISABLE_IT() {
+    HAL_NVIC_DisableIRQ(TIM2_IRQn);
+}
 
 
 /**
