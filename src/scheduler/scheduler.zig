@@ -23,14 +23,23 @@ export var CurrentTask: *Task = undefined;
 
 pub const Scheduler = struct {
     task_count: usize = 0,
-    tasks: [task.MAX_TASKS]?Task = [_]?Task{null} ** task.MAX_TASKS,
+    curr: usize = 0,
+    tasks: [task.MAX_TASKS]Task = undefined,
+
+    /// Choose who goes next and allocate the proper time slice for them
+    pub inline fn schedule(self: *Scheduler) void {
+        self.curr += 1;
+        self.curr %= self.task_count;
+
+        CurrentTask = &self.tasks[self.curr];
+    }
 
     pub fn register(self: *Scheduler, t: *const fn () void, id: u8) void {
         const t_constructed = Task.init(t, id);
         self.tasks[self.task_count] = t_constructed;
 
         if (self.task_count == 0) {
-            CurrentTask = &self.tasks[self.task_count].?;
+            CurrentTask = &self.tasks[self.task_count];
         }
 
         self.task_count += 1;

@@ -57,6 +57,9 @@ void SET_TIME_DELTA(size_t req);
 void SCHEDULER_ENABLE_IT();
 void SCHEDULER_DISABLE_IT();
 
+void ClearTimerITFlag();
+
+
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

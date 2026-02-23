@@ -24,7 +24,6 @@ UART_HandleTypeDef huart2;
 TIM_HandleTypeDef htim2;
 
 extern void entry(void);
-extern void timerIT(void);
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -93,6 +92,10 @@ void SCHEDULER_ENABLE_IT() {
 
 void SCHEDULER_DISABLE_IT() {
     HAL_NVIC_DisableIRQ(TIM2_IRQn);
+}
+
+void ClearTimerITFlag() {
+    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
 }
 
 
@@ -223,15 +226,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     {
         HAL_IncTick();
     }
-}
-
-/**
- * @brief This function handles TIM2 global interrupt.
- */
-void TIM2_IRQHandler(void)
-{
-    __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
-    timerIT();
 }
 
 /**
