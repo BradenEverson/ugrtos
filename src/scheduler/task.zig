@@ -11,10 +11,9 @@ export var stacks: [MAX_TASKS][MAX_STACK_SIZE]u32 align(8) = undefined;
 
 pub const Task = packed struct {
     sp: *u32,
-    // id: u8,
+    id: u8,
 
     pub fn init(task: *const fn () noreturn, id: u8) Task {
-        _ = id;
         const stack = &stacks[tasks];
         initStack(stack);
 
@@ -23,7 +22,7 @@ pub const Task = packed struct {
         tasks += 1;
 
         return Task{
-            // .id = id,
+            .id = id,
             .sp = &stack[MAX_STACK_SIZE - 16],
         };
     }
