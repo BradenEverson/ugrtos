@@ -264,4 +264,20 @@ pub fn build(b: *std.Build) void {
 
     b.getInstallStep().dependOn(&elf.step);
     b.installArtifact(elf);
+
+    const target_test = b.standardTargetOptions(.{});
+
+    const mod = b.addModule("fb_test", .{
+        .root_source_file = b.path("src/scheduler/fixed_buffer.zig"),
+        .target = target_test,
+        .optimize = optimization,
+    });
+
+    const unit_tests = b.addTest(.{
+        .root_module = mod,
+    });
+
+    const run_unit_tests = b.addRunArtifact(unit_tests);
+    const test_step = b.step("test", "Run the unit tests");
+    test_step.dependOn(&run_unit_tests.step);
 }
