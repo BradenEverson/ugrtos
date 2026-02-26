@@ -23,7 +23,7 @@ pub const TaskData = extern struct {
     task_id: u8 = 0,
 
     pub fn log(self: *const TaskData) void {
-        const entry = std.fmt.bufPrint(&log_buf, "{c},{},{},{}\r\n", .{ self.task_id, self.run_time, self.io_wait_time, self.ready_wait_time });
+        const entry = std.fmt.bufPrint(&log_buf, "{c},{},{},{}\r\n", .{ self.task_id, self.run_time, self.io_wait_time, self.ready_wait_time }) catch unreachable;
         logger.info(entry);
     }
 };
@@ -45,6 +45,7 @@ pub const Task = extern struct {
         return Task{
             .id = id,
             .sp = &stack[MAX_STACK_SIZE - 16],
+            .metadata = .{ .task_id = id },
         };
     }
 };
