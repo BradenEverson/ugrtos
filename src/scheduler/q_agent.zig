@@ -69,13 +69,13 @@ pub const QAgent = extern struct {
     /// How much we want to punish very high or very low deltas
     const P_LARGE_SMALL: f32 = 100;
 
-    pub inline fn update(self: *QAgent, cpu: f32, wait: f32) usize {
+    pub inline fn update(self: *QAgent, cpu: f32, wait: f32, io: f32) usize {
         const rng = rand.getRand();
         // TODO: Better reward
         // const reward = (P_NO_WAIT * cpuUptimeReward(cpu, wait)) -
         //     (P_LARGE_SMALL * self.distPenalty());
 
-        const reward = (cpu - wait);
+        const reward = (cpu - wait) + io;
 
         const next_state = getStateFromPct(cpu);
         var max_q_next = self.q_table[next_state][0];

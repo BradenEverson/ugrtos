@@ -58,14 +58,16 @@ pub const Task = extern struct {
     pub fn getDelta(self: *Task) usize {
         self.metadata.total_run_time += self.metadata.run_time;
         self.metadata.total_ready_wait_time += self.metadata.ready_wait_time;
+        self.metadata.total_io_wait_time += self.metadata.io_wait_time;
 
-        const tot = self.metadata.run_time + self.metadata.io_wait_time;
+        const tot = self.metadata.run_time + self.metadata.ready_wait_time + self.metadata.io_wait_time;
 
         const tot_f: f32 = @floatFromInt(tot);
         const cpu_f: f32 = @floatFromInt(self.metadata.run_time);
-        const wait_f: f32 = @floatFromInt(self.metadata.io_wait_time);
+        const wait_ready_f: f32 = @floatFromInt(self.metadata.ready_wait_time);
+        const wait_io_f: f32 = @floatFromInt(self.metadata.io_wait_time);
 
-        return self.agent.update(cpu_f / tot_f, wait_f / tot_f);
+        return self.agent.update(cpu_f / tot_f, wait_ready_f / tot_f, wait_io_f / tot_f);
     }
 };
 
