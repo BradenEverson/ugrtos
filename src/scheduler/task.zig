@@ -8,6 +8,7 @@ const logger = @import("../hal/logger.zig");
 /// Number of tasks we support at a time
 pub const MAX_TASKS: usize = 10;
 var tasks: usize = 0;
+// var tasks_f: f32 = 0;
 
 /// Number of words the stack can hold
 pub const MAX_STACK_SIZE: usize = 100;
@@ -49,6 +50,7 @@ pub const Task = extern struct {
         stack[MAX_STACK_SIZE - 2] = @intFromPtr(task);
 
         tasks += 1;
+        // tasks_f += 1.0;
 
         return Task{
             .id = id,
@@ -69,7 +71,13 @@ pub const Task = extern struct {
         const wait_ready_f: f32 = @floatFromInt(self.metadata.ready_wait_time);
         const wait_io_f: f32 = @floatFromInt(self.metadata.io_wait_time);
 
-        const del = self.agent.update(cpu_f / tot_f, wait_ready_f / tot_f, wait_io_f / tot_f, avg_wait);
+        const del = self.agent.update(
+            cpu_f / tot_f,
+            wait_ready_f / tot_f,
+            wait_io_f / tot_f,
+            avg_wait,
+            @floatFromInt(tasks),
+        );
         self.metadata.delta = del;
 
         return del;

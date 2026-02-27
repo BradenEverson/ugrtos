@@ -37,7 +37,7 @@ pub const QAgent = extern struct {
     last_action: Action = .Keep,
 
     const MIN_DELTA: usize = 1;
-    const MAX_DELTA: usize = 100;
+    const MAX_DELTA: usize = 50;
 
     pub fn updateDelta(self: *QAgent) void {
         switch (self.last_action) {
@@ -54,11 +54,10 @@ pub const QAgent = extern struct {
     const FAIRNESS_PENALTY: f32 = 10;
     const READY_WAIT_WEIGHT: f32 = 1;
 
-    pub inline fn update(self: *QAgent, cpu: f32, ready_wait: f32, io_wait: f32, avg_sys_wait: f32) usize {
+    pub inline fn update(self: *QAgent, cpu: f32, ready_wait: f32, io_wait: f32, avg_sys_wait: f32, num_tasks: f32) usize {
         const rng = rand.getRand();
 
-        // TODO: 2 and 1 should be # tasks, # tasks - 1
-        const avg_wait_excluding_me = ((avg_sys_wait * 2) - ready_wait) / 1;
+        const avg_wait_excluding_me = ((avg_sys_wait * num_tasks) - ready_wait) / (num_tasks - 1);
 
         const reward = cpu - (READY_WAIT_WEIGHT * ready_wait) + io_wait - (FAIRNESS_PENALTY * avg_wait_excluding_me);
 
