@@ -37,7 +37,7 @@ pub const QAgent = extern struct {
     last_action: Action = .Keep,
 
     const MIN_DELTA: usize = 1;
-    const MAX_DELTA: usize = 50;
+    const MAX_DELTA: usize = 100;
 
     pub fn updateDelta(self: *QAgent) void {
         switch (self.last_action) {
@@ -51,36 +51,9 @@ pub const QAgent = extern struct {
         }
     }
 
-    const AVG_DELTA: f32 = 10.0;
-
-    pub inline fn distPenalty(self: *QAgent) f32 {
-        const f_del: f32 = @floatFromInt(self.deltas[self.current_state]);
-
-        return std.math.pow(f32, f_del - AVG_DELTA, 2);
-    }
-
-    pub inline fn cpuUptimeReward(cpu: f32, wait: f32) f32 {
-        const pi: f32 = std.math.pi;
-        const pi_over_2: f32 = pi / 2;
-        const diff = (cpu - wait);
-
-        const epsilon = 1e-3;
-
-        return std.math.tan((pi_over_2 * diff) - epsilon);
-    }
-
-    /// How much we want to incorporate the total percentage of time
-    /// spent NOT being starved
-    const P_NO_WAIT: f32 = 175;
-
-    /// How much we want to punish very high or very low deltas
-    const P_LARGE_SMALL: f32 = 100;
-
     pub inline fn update(self: *QAgent, cpu: f32, wait: f32, io: f32) usize {
         const rng = rand.getRand();
         // TODO: Better reward
-        // const reward = (P_NO_WAIT * cpuUptimeReward(cpu, wait)) -
-        //     (P_LARGE_SMALL * self.distPenalty());
 
         const reward = (cpu - wait) + io;
 
