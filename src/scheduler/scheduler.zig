@@ -4,6 +4,7 @@ const task = @import("task.zig");
 const time = @import("../hal/time.zig");
 const Task = task.Task;
 
+const heuristics = @import("heuristics.zig");
 const logger = @import("../hal/logger.zig");
 
 extern fn SchedulerStart() void;
@@ -24,6 +25,9 @@ pub inline fn enable_irq() void {
 
 export var CurrentTask: *Task = undefined;
 
+/// How many context switches between logging
+const LOG_EVERY: usize = 100;
+
 pub const Scheduler = struct {
     task_count: usize = 0,
     curr: usize = 0,
@@ -33,6 +37,7 @@ pub const Scheduler = struct {
     avg_system_wait: f32 = 0,
 
     last_time: u32 = 0,
+    switches: u32 = 0,
 
     /// Choose who goes next and allocate the proper time slice for them
     pub inline fn preempt_schedule(self: *Scheduler) void {
@@ -63,6 +68,12 @@ pub const Scheduler = struct {
         }
 
         self.calcAvgWait();
+
+        self.switches += 1;
+        if (self.switches % (LOG_EVERY + self.curr) == 0) {
+            CurrentTask.metadata.timestamp = self.last_time;
+            heuristics.addData(CurrentTask.metadata);
+        }
 
         const new_delta = CurrentTask.getDelta(self.avg_system_wait);
         time.setDelta(new_delta);

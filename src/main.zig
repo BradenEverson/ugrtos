@@ -5,6 +5,8 @@ const std = @import("std");
 const logger = @import("hal/logger.zig");
 const time = @import("hal/time.zig");
 
+const heuristics = @import("scheduler/heuristics.zig");
+
 const tasks = @import("tasks.zig");
 const scheduler = @import("scheduler/scheduler.zig");
 
@@ -21,9 +23,9 @@ export fn ScheduleNext() void {
 }
 
 export fn buttonIt() void {
-    for (0..sched.task_count) |i| {
-        sched.tasks[i].metadata.log();
-    }
+    scheduler.disable_irq();
+    heuristics.sendAllData();
+    scheduler.enable_irq();
 }
 
 export fn entry() callconv(.c) void {
