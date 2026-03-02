@@ -53,6 +53,7 @@ extern "C" {
 void Error_Handler(void);
 
 void SET_TIME_DELTA(size_t req);
+void SetTimerMs(size_t req);
 
 void SCHEDULER_ENABLE_IT();
 void SCHEDULER_DISABLE_IT();

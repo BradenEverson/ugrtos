@@ -23,8 +23,10 @@
 UART_HandleTypeDef huart2;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim5;
+TIM_HandleTypeDef htim6;
 
 extern void entry(void);
+extern void sleepIt(void);
 extern void buttonIt(void);
 extern void gpioIt(unsigned, unsigned);
 
@@ -33,6 +35,30 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 
 static size_t time_quantum;
+
+
+void SetTimerMs(uint32_t req_ms) {
+    if (req_ms == 0) req_ms = 1;
+    if (req_ms > 65535) req_ms = 65535;
+
+    uint32_t uwTimclock;
+    if ((RCC->CFGR & RCC_CFGR_PPRE1) == 0) {
+        uwTimclock = HAL_RCC_GetPCLK1Freq();
+    } else {
+        uwTimclock = HAL_RCC_GetPCLK1Freq() * 2;
+    }
+
+    uint32_t new_psc = (uwTimclock / 1000U) - 1U;
+    __HAL_TIM_SET_PRESCALER(&htim6, new_psc);
+
+    uint32_t new_period = req_ms - 1U;
+    __HAL_TIM_SET_AUTORELOAD(&htim6, new_period);
+
+    __HAL_TIM_SET_COUNTER(&htim6, 0);
+    __HAL_TIM_CLEAR_FLAG(&htim6, TIM_FLAG_UPDATE);
+
+    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+}
 
 void SET_TIME_DELTA(uint32_t req_ms) {
     if (req_ms == 0) req_ms = 1; 
@@ -77,6 +103,42 @@ static void MX_TIM5_Init(void)
         Error_Handler();
     }
 }
+
+static void MX_TIM6_Init(void)
+{
+    uint32_t uwTimclock = 0U;
+    uint32_t uwPrescalerValue = 0U;
+
+    __HAL_RCC_TIM6_CLK_ENABLE();
+
+    if ((RCC->CFGR & RCC_CFGR_PPRE1) == 0) {
+        uwTimclock = HAL_RCC_GetPCLK1Freq();
+    } else {
+        uwTimclock = HAL_RCC_GetPCLK1Freq() * 2;
+    }
+
+    uwPrescalerValue = (uint32_t)((uwTimclock / 1000000U) - 1U);
+
+    htim6.Instance = TIM6;
+    htim6.Init.Period = (1000000U / 100U) - 1U; 
+
+    htim6.Init.Prescaler = uwPrescalerValue;
+    htim6.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+
+    if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    if (HAL_TIM_Base_Start_IT(&htim6) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 0, 1);
+};
 
 
 /**
@@ -135,7 +197,6 @@ void ClearTimerITFlag() {
     __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
 }
 
-
 /**
  * @brief  The application entry point.
  * @retval int
@@ -154,6 +215,8 @@ int main(void)
     MX_TIM2_Init();
     // Microsecond Counter
     MX_TIM5_Init();
+    // Sleep Counter
+    MX_TIM6_Init();
 
     HAL_TIM_Base_Start_IT(&htim2);
 
@@ -297,6 +360,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (htim->Instance == TIM1)
     {
         HAL_IncTick();
+    } else if (htim->Instance == TIM6) {
+        // TODO
+        HAL_NVIC_DisableIRQ(TIM6_DAC_IRQn);
+        sleepIt();
     }
 }
 

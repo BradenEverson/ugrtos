@@ -23,6 +23,10 @@ pub inline fn ioCall(call: io.IoCall) void {
     sched.ioCall(call);
 }
 
+export fn sleepIt() void {
+    logger.info("woke up from sleep!\r\n");
+}
+
 export fn ScheduleNext() void {
     sched.schedule();
 }
@@ -41,6 +45,7 @@ export fn buttonIt() void {
 
 export fn entry() callconv(.c) void {
     c.SET_TIME_DELTA(10);
+    c.SetTimerMs(10000);
 
     sched.register(tasks.foo, 'F');
     sched.register(tasks.bar, 'B');

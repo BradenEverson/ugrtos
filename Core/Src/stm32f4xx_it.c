@@ -56,6 +56,7 @@
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
 
@@ -172,6 +173,16 @@ void TIM1_UP_TIM10_IRQHandler(void)
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }
+
+/**
+  * @brief This function handles TIM6 global interrupt and DAC underrun interrupts.
+  */
+void TIM6_DAC_IRQHandler(void)
+{
+  /* Standard HAL handler: clears flags and calls your callbacks */
+  HAL_TIM_IRQHandler(&htim6);
+}
+
 
 void EXTI15_10_IRQHandler(void) {
     HAL_GPIO_EXTI_IRQHandler(B1_Pin);
