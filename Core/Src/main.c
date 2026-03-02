@@ -36,8 +36,8 @@ static void MX_USART2_UART_Init(void);
 
 static size_t time_quantum;
 
-
 void SetTimerMs(uint32_t req_ms) {
+    req_ms *= 4;
     if (req_ms == 0) req_ms = 1;
     if (req_ms > 65535) req_ms = 65535;
 
@@ -48,17 +48,23 @@ void SetTimerMs(uint32_t req_ms) {
         uwTimclock = HAL_RCC_GetPCLK1Freq() * 2;
     }
 
-    uint32_t new_psc = (uwTimclock / 1000U) - 1U;
-    __HAL_TIM_SET_PRESCALER(&htim6, new_psc);
+    HAL_TIM_Base_Stop_IT(&htim6);
 
-    uint32_t new_period = req_ms - 1U;
-    __HAL_TIM_SET_AUTORELOAD(&htim6, new_period);
+    htim6.Instance->PSC = (uwTimclock / 1000U) - 1U;
+    htim6.Instance->ARR = req_ms - 1U;
 
-    __HAL_TIM_SET_COUNTER(&htim6, 0);
-    __HAL_TIM_CLEAR_FLAG(&htim6, TIM_FLAG_UPDATE);
-
+    htim6.Instance->EGR = TIM_EGR_UG;
+    htim6.Instance->SR  = 0;
+    htim6.Instance->CNT = 0;
+    
+    HAL_NVIC_ClearPendingIRQ(TIM6_DAC_IRQn);
     HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+
+    htim6.Instance->DIER |= TIM_DIER_UIE;
+    htim6.Instance->CR1  |= TIM_CR1_CEN;
 }
+
+
 
 void SET_TIME_DELTA(uint32_t req_ms) {
     if (req_ms == 0) req_ms = 1; 
@@ -132,12 +138,8 @@ static void MX_TIM6_Init(void)
         Error_Handler();
     }
 
-    if (HAL_TIM_Base_Start_IT(&htim6) != HAL_OK)
-    {
-        Error_Handler();
-    }
-
     HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 0, 1);
+    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
 };
 
 

@@ -45,7 +45,7 @@ export fn buttonIt() void {
 
 export fn entry() callconv(.c) void {
     c.SET_TIME_DELTA(10);
-    c.SetTimerMs(10000);
+    c.SetTimerMs(1000);
 
     sched.register(tasks.foo, 'F');
     sched.register(tasks.bar, 'B');
