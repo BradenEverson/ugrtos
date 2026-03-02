@@ -8,7 +8,11 @@ const logger = @import("../hal/logger.zig");
 /// Number of tasks we support at a time
 pub const MAX_TASKS: usize = 10;
 var tasks: usize = 0;
-// var tasks_f: f32 = 0;
+
+pub const TaskState = enum(u8) {
+    ready,
+    io_waiting,
+};
 
 /// Number of words the stack can hold
 pub const MAX_STACK_SIZE: usize = 100;
@@ -40,7 +44,9 @@ pub const TaskData = extern struct {
 pub const Task = extern struct {
     sp: *u32,
     id: u8,
+    index: usize = 0,
     agent: QAgent = .{},
+    state: TaskState = .ready,
     metadata: TaskData = .{},
 
     pub fn init(task: *const fn () noreturn, id: u8) Task {

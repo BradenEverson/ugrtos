@@ -3,6 +3,7 @@
 const task = @import("task.zig");
 const time = @import("../hal/time.zig");
 const Task = task.Task;
+const TaskQueue = @import("fixed_buffer.zig").FixedBufferArrayList(*Task, task.MAX_TASKS);
 
 const heuristics = @import("heuristics.zig");
 const logger = @import("../hal/logger.zig");
@@ -30,7 +31,6 @@ const LOG_EVERY: usize = 10;
 
 pub const Scheduler = struct {
     task_count: usize = 0,
-    curr: usize = 0,
     tasks: [task.MAX_TASKS]Task = undefined,
 
     total_system_wait: usize = 0,
@@ -39,9 +39,11 @@ pub const Scheduler = struct {
     last_time: u32 = 0,
     switches: u32 = 0,
 
+    ready_queue: TaskQueue = .{},
+
     /// Choose who goes next and allocate the proper time slice for them
     pub inline fn preempt_schedule(self: *Scheduler) void {
-        const prev = self.curr;
+        const prev = CurrentTask;
 
         const now = time.getTimeMicros();
 
@@ -53,14 +55,12 @@ pub const Scheduler = struct {
         // we might just want a different version of schedule
         CurrentTask.metadata.time_put_on_wait = now;
 
-        self.curr += 1;
-        self.curr %= self.task_count;
-
-        CurrentTask = &self.tasks[self.curr];
+        self.ready_queue.pushFront(CurrentTask) catch unreachable;
+        CurrentTask = self.ready_queue.pop().?;
 
         self.last_time = time.getTimeMicros();
 
-        if (self.curr != prev) {
+        if (CurrentTask != prev) {
             // If we were not the last one running, need to update
             // non-busy time spent waiting
             CurrentTask.metadata.ready_wait_time = self.last_time - CurrentTask.metadata.time_put_on_wait;
@@ -70,7 +70,7 @@ pub const Scheduler = struct {
         self.calcAvgWait();
 
         self.switches += 1;
-        if (self.switches % (LOG_EVERY + self.curr) == 0) {
+        if (self.switches % (LOG_EVERY + CurrentTask.index) == 0) {
             CurrentTask.metadata.timestamp = self.last_time;
             heuristics.addData(CurrentTask.metadata);
         }
@@ -89,10 +89,9 @@ pub const Scheduler = struct {
     pub fn register(self: *Scheduler, t: *const fn () noreturn, id: u8) void {
         const t_constructed = Task.init(t, id);
         self.tasks[self.task_count] = t_constructed;
+        self.tasks[self.task_count].index = self.task_count;
 
-        if (self.task_count == 0) {
-            CurrentTask = &self.tasks[self.task_count];
-        }
+        self.ready_queue.pushFront(&self.tasks[self.task_count]) catch unreachable;
 
         self.task_count += 1;
     }
@@ -102,6 +101,8 @@ pub const Scheduler = struct {
             logger.info("Error: No Tasks Registered!!!\r\n");
             @panic("Invalid State");
         }
+
+        CurrentTask = self.ready_queue.pop().?;
 
         disable_irq();
 
