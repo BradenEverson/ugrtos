@@ -5,10 +5,15 @@ const time = @import("../hal/time.zig");
 const Task = task.Task;
 const TaskQueue = @import("fixed_buffer.zig").FixedBufferArrayList(*Task, task.MAX_TASKS);
 
+const io = @import("io_manager.zig");
+const IoManager = io.IoManager;
+const IoCall = io.IoCall;
+
 const heuristics = @import("heuristics.zig");
 const logger = @import("../hal/logger.zig");
 
 extern fn SchedulerStart() void;
+extern fn ForcePreempt() void;
 
 const c = @cImport({
     @cDefine("USE_HAL_DRIVER", {});
@@ -40,22 +45,27 @@ pub const Scheduler = struct {
     switches: u32 = 0,
 
     ready_queue: TaskQueue = .{},
+    io_manager: IoManager = .{},
+
+    pub inline fn ioCall(self: *Scheduler, call: IoCall) void {
+        self.io_manager.ioCall(CurrentTask, call);
+        ForcePreempt();
+    }
 
     /// Choose who goes next and allocate the proper time slice for them
-    pub inline fn preempt_schedule(self: *Scheduler) void {
+    pub inline fn schedule(self: *Scheduler) void {
         const prev = CurrentTask;
 
         const now = time.getTimeMicros();
 
         const delta = now - self.last_time;
-        // CurrentTask.metadata.total_run_time += delta;
         CurrentTask.metadata.run_time = delta;
 
-        // TODO: If we enter an IO wait queue instead don't do this
-        // we might just want a different version of schedule
         CurrentTask.metadata.time_put_on_wait = now;
 
-        self.ready_queue.pushFront(CurrentTask) catch unreachable;
+        if (CurrentTask.state == .ready) {
+            self.ready_queue.pushFront(CurrentTask) catch unreachable;
+        }
         CurrentTask = self.ready_queue.pop().?;
 
         self.last_time = time.getTimeMicros();
@@ -106,6 +116,7 @@ pub const Scheduler = struct {
 
         disable_irq();
 
+        self.io_manager.ready_queue_ref = &self.ready_queue;
         self.last_time = time.getTimeMicros();
 
         for (0..self.task_count) |i| {

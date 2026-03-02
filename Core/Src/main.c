@@ -26,6 +26,7 @@ TIM_HandleTypeDef htim5;
 
 extern void entry(void);
 extern void buttonIt(void);
+extern void gpioIt(unsigned, unsigned);
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -245,7 +246,15 @@ static void MX_GPIO_Init(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 1);
+    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_6;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 1);
     HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
     GPIO_InitStruct.Pin = LD2_Pin;
@@ -261,9 +270,16 @@ static void MX_GPIO_Init(void)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
+void ForcePreempt(void) {
+    htim2.Instance->EGR = TIM_EGR_UG;
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == B1_Pin) {
         buttonIt();
+    } else {
+        // hardcoded to B6
+        gpioIt(1, 6);
     }
 }
 

@@ -6,10 +6,14 @@ const c = @cImport({
     @cInclude("main.h");
 });
 
+const Scheduler = @import("scheduler/scheduler.zig").Scheduler;
+
+const sched = @import("main.zig");
+
 pub fn foo() noreturn {
     while (true) {
+        sched.ioCall(.{ .GpioWait = .{ .port = .B, .pin = 6 } });
         c.HAL_GPIO_TogglePin(c.LD2_GPIO_Port, c.LD2_Pin);
-        c.HAL_Delay(100);
     }
 }
 

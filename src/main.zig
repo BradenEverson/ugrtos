@@ -6,6 +6,7 @@ const logger = @import("hal/logger.zig");
 const time = @import("hal/time.zig");
 
 const heuristics = @import("scheduler/heuristics.zig");
+const io = @import("scheduler/io_manager.zig");
 
 const tasks = @import("tasks.zig");
 const scheduler = @import("scheduler/scheduler.zig");
@@ -18,8 +19,18 @@ const c = @cImport({
 
 var sched = scheduler.Scheduler{};
 
+pub inline fn ioCall(call: io.IoCall) void {
+    sched.ioCall(call);
+}
+
 export fn ScheduleNext() void {
-    sched.preempt_schedule();
+    sched.schedule();
+}
+
+export fn gpioIt(port: usize, pin: usize) void {
+    _ = port;
+    const gpio = io.Gpio{ .port = .B, .pin = pin };
+    sched.io_manager.gpioRetIt(gpio);
 }
 
 export fn buttonIt() void {
