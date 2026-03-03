@@ -19,6 +19,7 @@ var entries: FixedBufferAl(TaskData, MAX_LOGS) = .{};
 
 pub fn addData(data: TaskData) void {
     entries.append(data) catch {
+        logger.info("Full\r\n");
         sendAllData();
         @panic("We're done here\n");
     };

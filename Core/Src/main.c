@@ -74,6 +74,9 @@ void SET_TIME_DELTA(uint32_t req_ms) {
     uint32_t new_period = (req_ms * 1000U) - 1U;
 
     __HAL_TIM_SET_AUTORELOAD(&htim2, new_period);
+    __HAL_TIM_SET_COUNTER(&htim2, 0);
+
+    // HAL_TIM_GenerateEvent(&htim2, TIM_EVENTSOURCE_UPDATE);
 }
 
 static void MX_TIM5_Init(void)

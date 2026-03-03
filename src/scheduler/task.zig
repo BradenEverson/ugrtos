@@ -19,8 +19,6 @@ pub const MAX_STACK_SIZE: usize = 100;
 
 export var stacks: [MAX_TASKS][MAX_STACK_SIZE]u32 = undefined;
 
-var log_buf: [1024]u8 = undefined;
-
 pub const TaskData = extern struct {
     timestamp: u32 = 0,
     total_run_time: u32 = 0,
@@ -36,8 +34,7 @@ pub const TaskData = extern struct {
     time_put_on_wait: u32 = 0,
 
     pub fn log(self: *const TaskData) void {
-        const entry = std.fmt.bufPrint(&log_buf, "{c},{},{},{},{},{}\r\n", .{ self.task_id, self.timestamp, self.total_run_time, self.total_io_wait_time, self.total_ready_wait_time, self.delta }) catch unreachable;
-        logger.info(entry);
+        logger.log("{c},{},{},{},{},{}\r\n", .{ self.task_id, self.timestamp, self.total_run_time, self.total_io_wait_time, self.total_ready_wait_time, self.delta });
     }
 };
 
