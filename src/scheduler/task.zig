@@ -69,9 +69,9 @@ pub const Task = extern struct {
     }
 
     pub inline fn getDelta(self: *Task, avg_wait: f32) usize {
-        self.metadata.total_run_time += self.metadata.run_time;
-        self.metadata.total_ready_wait_time += self.metadata.ready_wait_time;
-        self.metadata.total_io_wait_time += self.metadata.io_wait_time;
+        // self.metadata.total_run_time += self.metadata.run_time;
+        // self.metadata.total_ready_wait_time += self.metadata.ready_wait_time;
+        // self.metadata.total_io_wait_time += self.metadata.io_wait_time;
 
         const tot = self.metadata.run_time + self.metadata.io_wait_time;
 
@@ -87,7 +87,7 @@ pub const Task = extern struct {
             avg_wait,
             @floatFromInt(tasks),
         );
-        self.metadata.delta = del;
+        // self.metadata.delta = del;
 
         return del;
     }

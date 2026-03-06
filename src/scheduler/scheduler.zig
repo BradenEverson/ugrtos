@@ -69,14 +69,15 @@ pub const Scheduler = struct {
         CurrentTask.metadata.ready_wait_time = time.getTimeMicros() - CurrentTask.metadata.time_put_on_wait;
         self.total_system_wait += CurrentTask.metadata.ready_wait_time;
 
-        self.calcAvgWait();
-        const new_delta = CurrentTask.getDelta(self.avg_system_wait);
-
-        CurrentTask.metadata.timestamp = time.getTimeMicros();
-        heuristics.addData(CurrentTask.metadata);
-
-        time.setDelta(new_delta);
+        // self.calcAvgWait();
+        // const new_delta = CurrentTask.getDelta(self.avg_system_wait);
+        //
+        // time.setDelta(new_delta);
         self.last_time = time.getTimeMicros();
+
+        const switch_time_us = self.last_time - now;
+        logger.log("\r\nTime: {}us\r\n", .{switch_time_us});
+        @panic("done");
     }
 
     pub inline fn calcAvgWait(self: *Scheduler) void {
