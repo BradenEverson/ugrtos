@@ -72,7 +72,7 @@ pub const Scheduler = struct {
         self.calcAvgWait();
         const new_delta = CurrentTask.getDelta(self.avg_system_wait);
 
-        // CurrentTask.metadata.timestamp = time.getTimeMicros();
+        CurrentTask.metadata.timestamp = time.getTimeMicros();
         heuristics.addData(CurrentTask.metadata);
 
         time.setDelta(new_delta);

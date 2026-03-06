@@ -64,8 +64,6 @@ void SetTimerMs(uint32_t req_ms) {
     htim6.Instance->CR1  |= TIM_CR1_CEN;
 }
 
-
-
 void SET_TIME_DELTA(uint32_t req_ms) {
     if (req_ms == 0) req_ms = 1; 
 
@@ -75,8 +73,6 @@ void SET_TIME_DELTA(uint32_t req_ms) {
 
     __HAL_TIM_SET_AUTORELOAD(&htim2, new_period);
     __HAL_TIM_SET_COUNTER(&htim2, 0);
-
-    // HAL_TIM_GenerateEvent(&htim2, TIM_EVENTSOURCE_UPDATE);
 }
 
 static void MX_TIM5_Init(void)

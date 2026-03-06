@@ -91,6 +91,11 @@ pub const QAgent = extern struct {
             reward -= 0.5;
         }
 
+        // "Inertia" punishment
+        if (self.last_action != .Keep) {
+            reward -= 3.75;
+        }
+
         const next_state = getStateFromPct(cpu);
         var max_q_next = self.q_table[next_state][0];
 

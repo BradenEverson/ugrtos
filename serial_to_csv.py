@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     with open(file, "w") as f:
         try:
-            f.write("task_id,timestamp_us,total_run_time,total_io_wait_time,total_ready_wait_time,delta\n")
+            f.write("task_id,total_run_timf,total_io_wait_time,total_ready_wait_time,wait_pct,delta\n")
             while not done:
                 line_bytes = ser.readline()
                 parse = line_bytes.decode('utf-8').strip()

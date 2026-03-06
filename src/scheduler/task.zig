@@ -34,7 +34,13 @@ pub const TaskData = extern struct {
     time_put_on_wait: u32 = 0,
 
     pub fn log(self: *const TaskData) void {
-        logger.log("{c},{},{},{},{},{}\r\n", .{ self.task_id, self.timestamp, self.total_run_time, self.total_io_wait_time, self.total_ready_wait_time, self.delta });
+        const ready_wait: f32 = @floatFromInt(self.total_ready_wait_time);
+        const io_wait: f32 = @floatFromInt(self.total_io_wait_time);
+        const runtime: f32 = @floatFromInt(self.total_run_time);
+
+        const starve = (ready_wait) / (ready_wait + io_wait + runtime);
+
+        logger.log("{c},{},{},{},{},{}\r\n", .{ self.task_id, self.total_run_time, self.total_io_wait_time, self.total_ready_wait_time, starve, self.delta });
     }
 };
 

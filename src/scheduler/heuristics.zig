@@ -13,13 +13,12 @@ const FixedBufferAl = @import("fixed_buffer.zig").FixedBufferArrayList;
 
 const logger = @import("../hal/logger.zig");
 
-const MAX_LOGS: usize = 1000;
+const MAX_LOGS: usize = 500;
 
 var entries: FixedBufferAl(TaskData, MAX_LOGS) = .{};
 
 pub fn addData(data: TaskData) void {
     entries.append(data) catch {
-        logger.info("Full\r\n");
         sendAllData();
         @panic("We're done here\n");
     };
