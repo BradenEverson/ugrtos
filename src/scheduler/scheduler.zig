@@ -54,6 +54,7 @@ pub const Scheduler = struct {
 
     /// Choose who goes next and allocate the proper time slice for them
     pub inline fn schedule(self: *Scheduler) void {
+        self.switches += 1;
         const now = time.getTimeMicros();
 
         const delta = now - self.last_time;

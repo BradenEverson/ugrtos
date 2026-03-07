@@ -23,6 +23,10 @@ pub inline fn ioCall(call: io.IoCall) void {
     sched.ioCall(call);
 }
 
+pub inline fn getSwitchCount() usize {
+    return sched.switches;
+}
+
 export fn ScheduleNext() void {
     sched.schedule();
 }

@@ -1,6 +1,8 @@
 //! Heuristics tracker
 
 const std = @import("std");
+const main = @import("../main.zig");
+const time = @import("../hal/time.zig");
 
 const c = @cImport({
     @cDefine("USE_HAL_DRIVER", {});
@@ -19,7 +21,8 @@ var entries: FixedBufferAl(TaskData, MAX_LOGS) = .{};
 
 pub fn addData(data: TaskData) void {
     entries.append(data) catch {
-        sendAllData();
+        // sendAllData();
+        logger.log("Context Switches: {} over {}us\r\n", .{ main.getSwitchCount(), time.getTimeMicros() });
         @panic("We're done here\n");
     };
 }
