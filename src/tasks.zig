@@ -1,4 +1,4 @@
-//! Generic tasks to register
+//! Generic tasks to register with known optima
 
 const c = @cImport({
     @cDefine("USE_HAL_DRIVER", {});

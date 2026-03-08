@@ -70,7 +70,7 @@ pub const Scheduler = struct {
         self.total_system_wait += CurrentTask.metadata.ready_wait_time;
 
         self.calcAvgWait();
-        const new_delta = CurrentTask.getDelta(self.avg_system_wait);
+        const new_delta = CurrentTask.getDelta(self.avg_system_wait, self.ready_queue.len);
 
         CurrentTask.metadata.timestamp = time.getTimeMicros();
         heuristics.addData(CurrentTask.metadata);

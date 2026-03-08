@@ -13,7 +13,7 @@ const FixedBufferAl = @import("fixed_buffer.zig").FixedBufferArrayList;
 
 const logger = @import("../hal/logger.zig");
 
-const MAX_LOGS: usize = 500;
+const MAX_LOGS: usize = 1000;
 
 var entries: FixedBufferAl(TaskData, MAX_LOGS) = .{};
 

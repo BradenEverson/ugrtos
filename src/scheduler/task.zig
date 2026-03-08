@@ -59,7 +59,6 @@ pub const Task = extern struct {
         stack[MAX_STACK_SIZE - 2] = @intFromPtr(task);
 
         tasks += 1;
-        // tasks_f += 1.0;
 
         return Task{
             .id = id,
@@ -68,7 +67,7 @@ pub const Task = extern struct {
         };
     }
 
-    pub inline fn getDelta(self: *Task, avg_wait: f32) usize {
+    pub inline fn getDelta(self: *Task, avg_wait: f32, ready_queue_length: usize) usize {
         self.metadata.total_run_time += self.metadata.run_time;
         self.metadata.total_ready_wait_time += self.metadata.ready_wait_time;
         self.metadata.total_io_wait_time += self.metadata.io_wait_time;
@@ -85,7 +84,7 @@ pub const Task = extern struct {
             wait_ready_f / tot_f,
             wait_io_f / tot_f,
             avg_wait,
-            @floatFromInt(tasks),
+            @floatFromInt(ready_queue_length),
         );
         self.metadata.delta = del;
 

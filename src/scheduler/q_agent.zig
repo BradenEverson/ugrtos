@@ -7,7 +7,7 @@ const logger = @import("../hal/logger.zig");
 const ALPHA: f32 = 0.001;
 
 /// Discount Factor, importance of future rewards
-const GAMMA: f32 = 0.7;
+const GAMMA: f32 = 0.9;
 
 /// Exploration rate, probability we try a random action
 const EPSILON: f32 = 0.05;
@@ -16,10 +16,10 @@ pub const QAgent = extern struct {
     /// Number of times we split up the CPU utilization percents
     /// into discrete buckets
     /// Ex: 10 buckets gives us 0-10%, 11-20%, ...
-    const BUCKETS: usize = 4;
+    const BUCKETS: usize = 3;
     const BUCKETS_F: f32 = @floatFromInt(BUCKETS);
 
-    pub fn getStateFromPct(cpu_pct: f32) usize {
+    pub inline fn getStateFromPct(cpu_pct: f32) usize {
         const bucket: f32 = cpu_pct * BUCKETS_F;
 
         const bin: usize = @intFromFloat(bucket);
@@ -40,7 +40,7 @@ pub const QAgent = extern struct {
     const MIN_DELTA: usize = 5;
     const MAX_DELTA: usize = 200;
 
-    pub fn updateDelta(self: *QAgent) void {
+    pub inline fn updateDelta(self: *QAgent) void {
         switch (self.last_action) {
             .Shorten => if (self.deltas[self.current_state] > MIN_DELTA) {
                 self.deltas[self.current_state] -= 1;
@@ -53,10 +53,11 @@ pub const QAgent = extern struct {
     }
 
     const FAIRNESS_PENALTY: f32 = 10;
-    const READY_WAIT_WEIGHT: f32 = 10;
+    const READY_WAIT_WEIGHT: f32 = 20;
+    const IO_REWARD: f32 = 5;
 
-    const B: f32 = 0.5;
-    const K: f32 = 0.5;
+    const B: f32 = 0.002;
+    const K: f32 = 1;
 
     pub fn sigmoidPunishment(self: *QAgent) f32 {
         const d: f32 = @floatFromInt(self.deltas[self.current_state]);
@@ -67,33 +68,17 @@ pub const QAgent = extern struct {
     pub inline fn exponentialDeltaPunishment(self: *QAgent) f32 {
         const d: f32 = @floatFromInt(self.deltas[self.current_state]);
 
-        return B * std.math.exp(K * (d - 20));
+        return B * std.math.exp(K * @abs(d - 10));
     }
 
     pub inline fn update(self: *QAgent, cpu: f32, ready_wait: f32, io_wait: f32, avg_sys_wait: f32, num_tasks: f32) usize {
         const rng = rand.getRand();
 
         const best_cpu_avg_wait = 1 / num_tasks;
+        var reward = cpu - (READY_WAIT_WEIGHT * ready_wait) + (IO_REWARD * io_wait) - (FAIRNESS_PENALTY * (avg_sys_wait - best_cpu_avg_wait));
 
-        var reward = cpu - (READY_WAIT_WEIGHT * ready_wait) + io_wait - (FAIRNESS_PENALTY * (avg_sys_wait - best_cpu_avg_wait));
-
-        // const throughput = cpu;
-        // const ready_penalty = (ready_wait * ready_wait) * READY_WAIT_WEIGHT;
-        // const io_bonus = io_wait * 2.0;
-        // const system_pressure = (avg_sys_wait - (1.0 / num_tasks)) * FAIRNESS_PENALTY;
-        // var reward = throughput + io_bonus - ready_penalty - system_pressure;
-
-        // var reward = (cpu - ready_wait) + io_wait;
-
-        if (self.last_action != .Shorten) {
-            reward -= self.exponentialDeltaPunishment();
-        } else if (reward < 10) {
-            reward -= 0.5;
-        }
-
-        // "Inertia" punishment
         if (self.last_action != .Keep) {
-            reward -= 3.75;
+            reward -= self.exponentialDeltaPunishment();
         }
 
         const next_state = getStateFromPct(cpu);

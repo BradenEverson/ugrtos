@@ -8,6 +8,9 @@ const c = @cImport({
     @cInclude("main.h");
 });
 
+extern var huart4: c.UART_HandleTypeDef;
+extern var huart5: c.UART_HandleTypeDef;
+
 const time = @import("../hal/time.zig");
 const task = @import("task.zig");
 const Task = task.Task;
@@ -15,8 +18,6 @@ const Task = task.Task;
 const logger = @import("../hal/logger.zig");
 
 const TaskQueue = @import("fixed_buffer.zig").FixedBufferArrayList(*Task, task.MAX_TASKS);
-
-var Sleeper: ?*Task = null;
 
 pub const GpioPort = enum(usize) {
     A,
@@ -34,15 +35,37 @@ pub const Gpio = extern struct {
     }
 };
 
+pub const Uart = enum {
+    uart4,
+    uart5,
+
+    pub fn getHuart(self: Uart) *c.UART_HandleTypeDef {
+        return switch (self) {
+            .uart4 => &huart4,
+            .uart5 => &huart5,
+        };
+    }
+};
+
 pub const IoCall = union(enum) {
     GpioWait: Gpio,
     SleepMs: usize,
-    UartTransmit: []const u8,
-    UartReceive: []u8,
+    UartTransmit: struct { msg: []const u8, uart: Uart },
+    UartReceive: struct { buf: []u8, uart: Uart },
 };
 
 const GpioPinCount: usize = @typeInfo(GpioPort).@"enum".fields.len * 16;
 var gpio_queues: [GpioPinCount]TaskQueue = [_]TaskQueue{.{}} ** GpioPinCount;
+
+var Sleeper: ?*Task = null;
+
+const UartIoQueues = struct {
+    read: ?*Task = null,
+    write: ?*Task = null,
+};
+
+const UartCount: usize = @typeInfo(Uart).@"enum".fields.len;
+var uart_queues: [UartCount]UartIoQueues = [_]UartIoQueues{.{}} ** UartCount;
 
 var buf: [256]u8 = undefined;
 
@@ -59,6 +82,34 @@ pub const IoManager = extern struct {
                 gpio_queues[gpio.toIndex()].pushFront(t) catch unreachable;
             },
 
+            .UartTransmit => |uart_req| {
+                const idx: usize = @intFromEnum(uart_req.uart);
+                if (uart_queues[idx].write) |_| {
+                    unreachable;
+                }
+
+                t.metadata.time_put_on_wait = time.getTimeMicros();
+                t.state = .io_waiting;
+                uart_queues[idx].write = t;
+
+                // TODO: Better error handling for sure. This returns a status code
+                _ = c.HAL_UART_Transmit_IT(uart_req.uart.getHuart(), uart_req.msg.ptr, uart_req.msg.len);
+            },
+
+            .UartReceive => |uart_req| {
+                const idx: usize = @intFromEnum(uart_req.uart);
+                if (uart_queues[idx].read) |_| {
+                    unreachable;
+                }
+
+                t.metadata.time_put_on_wait = time.getTimeMicros();
+                t.state = .io_waiting;
+                uart_queues[idx].read = t;
+
+                // TODO: Better error handling for sure. This returns a status code
+                _ = c.HAL_UART_Receive_IT(uart_req.uart.getHuart(), uart_req.buf.ptr, uart_req.buf.len);
+            },
+
             .SleepMs => |sleep| {
                 // Currently can only support one sleeping task at a time
                 // TODO: We can do some cool math where if a new task tries to sleep for less time we switch the timer to that then resume to the next. Out of scope for this MVP I believe.
@@ -73,7 +124,6 @@ pub const IoManager = extern struct {
 
                 c.SetTimerMs(sleep);
             },
-            else => {},
         }
     }
 
@@ -89,6 +139,36 @@ pub const IoManager = extern struct {
         }
 
         Sleeper = null;
+    }
+
+    pub inline fn uartTransmitRetIt(self: *IoManager, uart: Uart) void {
+        const idx: usize = @intFromEnum(uart);
+        if (uart_queues[idx].write) |t| {
+            const now = time.getTimeMicros();
+
+            t.metadata.io_wait_time = now - t.metadata.time_put_on_wait;
+            t.metadata.time_put_on_wait = now;
+            t.state = .ready;
+
+            self.ready_queue_ref.pushFront(t) catch unreachable;
+        }
+
+        uart_queues[idx].write = null;
+    }
+
+    pub inline fn uartReceiveRetIt(self: *IoManager, uart: Uart) void {
+        const idx: usize = @intFromEnum(uart);
+        if (uart_queues[idx].read) |t| {
+            const now = time.getTimeMicros();
+
+            t.metadata.io_wait_time = now - t.metadata.time_put_on_wait;
+            t.metadata.time_put_on_wait = now;
+            t.state = .ready;
+
+            self.ready_queue_ref.pushFront(t) catch unreachable;
+        }
+
+        uart_queues[idx].read = null;
     }
 
     pub inline fn gpioRetIt(self: *IoManager, gpio: Gpio) void {
