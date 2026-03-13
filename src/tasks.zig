@@ -8,6 +8,8 @@ const c = @cImport({
     @cInclude("main.h");
 });
 
+const logger = @import("hal/logger.zig");
+
 const Scheduler = @import("scheduler/scheduler.zig").Scheduler;
 
 const sched = @import("main.zig");
@@ -22,8 +24,8 @@ pub fn blockingWaitApprox(n: usize) void {
 pub fn ioBlinky() noreturn {
     while (true) {
         c.HAL_GPIO_TogglePin(c.LD2_GPIO_Port, c.LD2_Pin);
-        blockingWaitApprox(50);
-        sched.ioCall(.{ .SleepMs = 50 });
+        blockingWaitApprox(20);
+        sched.ioCall(.{ .SleepMs = 100 });
     }
 }
 

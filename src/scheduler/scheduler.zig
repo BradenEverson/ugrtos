@@ -65,7 +65,7 @@ pub const Scheduler = struct {
         }
         CurrentTask = self.ready_queue.pop().?;
 
-        CurrentTask.metadata.ready_wait_time = time.getTimeMicros() - CurrentTask.metadata.last_time_switched;
+        CurrentTask.metadata.ready_wait_time = now - CurrentTask.metadata.last_time_switched;
         self.total_system_wait += CurrentTask.metadata.ready_wait_time;
 
         self.calcAvgWait();
@@ -114,10 +114,9 @@ pub const Scheduler = struct {
         disable_irq();
 
         self.io_manager.ready_queue_ref = &self.ready_queue;
-        const start_time = time.getTimeMicros();
 
         for (0..self.task_count) |i| {
-            self.tasks[i].metadata.last_time_switched = start_time;
+            self.tasks[i].metadata.last_time_switched = time.getTimeMicros();
         }
 
         c.SCHEDULER_ENABLE_IT();

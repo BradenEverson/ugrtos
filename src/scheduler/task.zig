@@ -15,7 +15,7 @@ pub const TaskState = enum(u8) {
 };
 
 /// Number of words the stack can hold
-pub const MAX_STACK_SIZE: usize = 100;
+pub const MAX_STACK_SIZE: usize = 512;
 
 export var stacks: [MAX_TASKS][MAX_STACK_SIZE]u32 = undefined;
 
@@ -69,10 +69,6 @@ pub const Task = extern struct {
     }
 
     pub inline fn getDelta(self: *Task, avg_wait: f32, ready_queue_length: usize) usize {
-        self.metadata.total_run_time += self.metadata.run_time;
-        self.metadata.total_ready_wait_time += self.metadata.ready_wait_time;
-        self.metadata.total_io_wait_time += self.metadata.io_wait_time;
-
         const tot = self.metadata.run_time + self.metadata.io_wait_time;
 
         const tot_f: f32 = @floatFromInt(tot);

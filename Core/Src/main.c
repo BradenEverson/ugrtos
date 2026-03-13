@@ -436,7 +436,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         HAL_IncTick();
     } else if (htim->Instance == TIM6) {
         // TODO
-        // HAL_NVIC_DisableIRQ(TIM6_DAC_IRQn);
+        HAL_NVIC_DisableIRQ(TIM6_DAC_IRQn);
         sleepIt();
     }
 }

@@ -1,4 +1,5 @@
 //! Discrete Q-Table Bins for CPU utilization percents
+
 const std = @import("std");
 const rand = @import("../hal/rand.zig");
 const logger = @import("../hal/logger.zig");
@@ -7,18 +8,32 @@ const logger = @import("../hal/logger.zig");
 const ALPHA: f32 = 0.01;
 
 /// Discount Factor, importance of future rewards
-const GAMMA: f32 = 0.9;
+const GAMMA: f32 = 0.7;
 
 /// Exploration rate, probability we try a random action
-const EPSILON: f32 = 0.05;
+const EPSILON: f32 = 0.15;
+
+/// Staggered Updates
+const TIME_UNTIL_UPDATE: usize = 1;
+
+/// Gates for what's beyond reasonable deltas
+const MIN_DELTA: usize = 5;
+const MAX_DELTA: usize = 200;
+
+const FAIRNESS_PENALTY: f32 = 15;
+const READY_WAIT_WEIGHT: f32 = 5;
+const IO_REWARD: f32 = 5;
+
+const B: f32 = 0.002;
+const K: f32 = 1;
+
+/// Number of times we split up the CPU utilization percents
+/// into discrete buckets
+/// Ex: 10 buckets gives us 0-10%, 11-20%, ...
+const BUCKETS: usize = 10;
+const BUCKETS_F: f32 = @floatFromInt(BUCKETS);
 
 pub const QAgent = extern struct {
-    /// Number of times we split up the CPU utilization percents
-    /// into discrete buckets
-    /// Ex: 10 buckets gives us 0-10%, 11-20%, ...
-    const BUCKETS: usize = 6;
-    const BUCKETS_F: f32 = @floatFromInt(BUCKETS);
-
     pub inline fn getStateFromPct(cpu_pct: f32) usize {
         const bucket: f32 = cpu_pct * BUCKETS_F;
 
@@ -37,8 +52,12 @@ pub const QAgent = extern struct {
     current_state: usize = 0,
     last_action: Action = .Keep,
 
-    const MIN_DELTA: usize = 5;
-    const MAX_DELTA: usize = 200;
+    rolling_cpu: f32 = 0,
+    rolling_io: f32 = 0,
+    rolling_ready_wait: f32 = 0,
+    rolling_avg_wait: f32 = 0,
+    rolling_num_tasks: f32 = 0,
+    updates: usize = 0,
 
     pub inline fn updateDelta(self: *QAgent) void {
         switch (self.last_action) {
@@ -52,30 +71,40 @@ pub const QAgent = extern struct {
         }
     }
 
-    const FAIRNESS_PENALTY: f32 = 15;
-    const READY_WAIT_WEIGHT: f32 = 1;
-    const IO_REWARD: f32 = 10;
-
-    const B: f32 = 0.002;
-    const K: f32 = 1;
-
     pub inline fn exponentialDeltaPunishment(self: *QAgent) f32 {
         const d: f32 = @floatFromInt(self.deltas[self.current_state]);
 
         return B * std.math.exp(K * @abs(d - 10));
     }
 
-    const D: f32 = 0.01;
-    const G: f32 = 0.5;
+    pub fn update(self: *QAgent, cpu_here: f32, ready_wait_here: f32, io_wait_here: f32, avg_sys_wait_here: f32, num_tasks_here: f32) usize {
+        self.updates += 1;
 
-    pub inline fn quadraticDeltaPunishment(self: *QAgent) f32 {
-        const d: f32 = @floatFromInt(self.deltas[self.current_state]);
+        self.rolling_cpu += cpu_here;
+        self.rolling_ready_wait += ready_wait_here;
+        self.rolling_io += io_wait_here;
+        self.rolling_avg_wait += avg_sys_wait_here;
+        self.rolling_num_tasks += num_tasks_here;
 
-        return D * std.math.pow(f32, G * @abs(d - 15), 3);
-    }
+        if (self.updates % TIME_UNTIL_UPDATE != 0) {
+            return self.deltas[self.current_state];
+        }
 
-    pub inline fn update(self: *QAgent, cpu: f32, ready_wait: f32, io_wait: f32, avg_sys_wait: f32, num_tasks: f32) usize {
         const rng = rand.getRand();
+
+        const n: f32 = @floatFromInt(TIME_UNTIL_UPDATE);
+
+        const cpu = self.rolling_cpu / n;
+        const ready_wait = self.rolling_ready_wait / n;
+        const io_wait = self.rolling_io / n;
+        const avg_sys_wait = self.rolling_avg_wait / n;
+        const num_tasks = self.rolling_num_tasks / n;
+
+        self.rolling_cpu = 0;
+        self.rolling_ready_wait = 0;
+        self.rolling_io = 0;
+        self.rolling_avg_wait = 0;
+        self.rolling_num_tasks = 0;
 
         const best_cpu_avg_wait = 1 / num_tasks;
         var reward = cpu - (READY_WAIT_WEIGHT * ready_wait) + (IO_REWARD * io_wait) - (FAIRNESS_PENALTY * (avg_sys_wait - best_cpu_avg_wait));
