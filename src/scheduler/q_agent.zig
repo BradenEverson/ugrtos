@@ -4,35 +4,42 @@ const rand = @import("../hal/rand.zig");
 const logger = @import("../hal/logger.zig");
 
 /// Learning Rate
-const ALPHA: f32 = 0.01;
+const ALPHA: f32 = 0.1;
 
 /// Discount Factor, importance of future rewards
-const GAMMA: f32 = 0.9;
+const GAMMA: f32 = 0.6;
 
 /// Exploration rate, probability we try a random action
-const EPSILON: f32 = 0.05;
+const EPSILON: f32 = 0.15;
+
+/// Number of times we split up the CPU utilization percents
+/// into discrete buckets
+/// Ex: 10 buckets gives us 0-10%, 11-20%, ...
+const BUCKETS: usize = 5;
+const BUCKETS_F: f32 = @floatFromInt(BUCKETS);
+
+const TOTAL_STATES = BUCKETS; // * BUCKETS;
 
 pub const QAgent = extern struct {
-    /// Number of times we split up the CPU utilization percents
-    /// into discrete buckets
-    /// Ex: 10 buckets gives us 0-10%, 11-20%, ...
-    const BUCKETS: usize = 6;
-    const BUCKETS_F: f32 = @floatFromInt(BUCKETS);
+    /// Includes IO as a second state dimension
+    // pub inline fn getState(cpu_pct: f32, io_pct: f32) usize {
+    //     const cpu_bucket = @min(@as(usize, @intFromFloat(cpu_pct * BUCKETS_F)), BUCKETS - 1);
+    //     const io_bucket = @min(@as(usize, @intFromFloat(io_pct * BUCKETS_F)), BUCKETS - 1);
+    //     return cpu_bucket + io_bucket * BUCKETS;
+    // }
 
-    pub inline fn getStateFromPct(cpu_pct: f32) usize {
-        const bucket: f32 = cpu_pct * BUCKETS_F;
-
-        const bin: usize = @intFromFloat(bucket);
-        if (bin >= BUCKETS) return BUCKETS - 1;
-        return bin;
+    pub inline fn getState(cpu_pct: f32, io_pct: f32) usize {
+        _ = io_pct;
+        const cpu_bucket = @min(@as(usize, @intFromFloat(cpu_pct * BUCKETS_F)), BUCKETS - 1);
+        return cpu_bucket;
     }
 
     /// Actions the agent can take
     const Action = enum(u8) { Shorten, Keep, Lengthen };
     const NumActions = @typeInfo(Action).@"enum".fields.len;
 
-    q_table: [BUCKETS][NumActions]f32 = std.mem.zeroes([BUCKETS][NumActions]f32),
-    deltas: [BUCKETS]usize = [_]usize{10} ** BUCKETS,
+    q_table: [TOTAL_STATES][NumActions]f32 = std.mem.zeroes([TOTAL_STATES][NumActions]f32),
+    deltas: [TOTAL_STATES]usize = [_]usize{10} ** TOTAL_STATES,
 
     current_state: usize = 0,
     last_action: Action = .Keep,
@@ -52,9 +59,9 @@ pub const QAgent = extern struct {
         }
     }
 
-    const FAIRNESS_PENALTY: f32 = 15;
+    const FAIRNESS_PENALTY: f32 = 3;
     const READY_WAIT_WEIGHT: f32 = 1;
-    const IO_REWARD: f32 = 10;
+    const IO_REWARD: f32 = 1;
 
     const B: f32 = 0.002;
     const K: f32 = 1;
@@ -75,16 +82,17 @@ pub const QAgent = extern struct {
     }
 
     pub inline fn update(self: *QAgent, cpu: f32, ready_wait: f32, io_wait: f32, avg_sys_wait: f32, num_tasks: f32) usize {
+        _ = num_tasks;
+
         const rng = rand.getRand();
 
-        const best_cpu_avg_wait = 1 / num_tasks;
-        var reward = cpu - (READY_WAIT_WEIGHT * ready_wait) + (IO_REWARD * io_wait) - (FAIRNESS_PENALTY * (avg_sys_wait - best_cpu_avg_wait));
+        var reward = cpu - (READY_WAIT_WEIGHT * ready_wait) - (FAIRNESS_PENALTY * (avg_sys_wait));
 
         if (self.last_action != .Keep) {
             reward -= self.exponentialDeltaPunishment();
         }
 
-        const next_state = getStateFromPct(cpu);
+        const next_state = getState(cpu, io_wait);
         var max_q_next = self.q_table[next_state][0];
 
         inline for (1..NumActions) |i| {

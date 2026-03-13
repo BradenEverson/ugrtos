@@ -7,6 +7,7 @@ const c = @cImport({
     @cDefine("STM32F446xx", {});
     @cInclude("main.h");
 });
+const logger = @import("hal/logger.zig");
 
 const Scheduler = @import("scheduler/scheduler.zig").Scheduler;
 
@@ -24,6 +25,22 @@ pub fn ioBlinky() noreturn {
         c.HAL_GPIO_TogglePin(c.LD2_GPIO_Port, c.LD2_Pin);
         blockingWaitApprox(50);
         sched.ioCall(.{ .SleepMs = 50 });
+    }
+}
+
+/// IO Bound Blinky
+pub fn ioBlinky2() noreturn {
+    while (true) {
+        blockingWaitApprox(30);
+        sched.ioCall(.{ .SleepMs = 100 });
+    }
+}
+
+/// IO Bound Blinky
+pub fn ioBlinky3() noreturn {
+    while (true) {
+        blockingWaitApprox(100);
+        sched.ioCall(.{ .SleepMs = 10 });
     }
 }
 

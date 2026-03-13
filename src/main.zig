@@ -23,6 +23,18 @@ pub inline fn ioCall(call: io.IoCall) void {
     sched.ioCall(call);
 }
 
+pub fn logDeltaTables() void {
+    for (0..sched.task_count) |i| {
+        logger.log("{c} - {any}\r\n", .{ sched.tasks[i].id, sched.tasks[i].agent.deltas });
+    }
+}
+
+pub fn logQTables() void {
+    for (0..sched.task_count) |i| {
+        logger.log("{c} - {any}\r\n", .{ sched.tasks[i].id, sched.tasks[i].agent.q_table });
+    }
+}
+
 export fn ScheduleNext() void {
     sched.schedule();
 }
@@ -40,6 +52,8 @@ export fn gpioIt(port: usize, pin: usize) void {
 export fn buttonIt() void {
     scheduler.disable_irq();
     heuristics.sendAllData();
+    logDeltaTables();
+    logQTables();
     @panic("We should not recover from this");
 }
 

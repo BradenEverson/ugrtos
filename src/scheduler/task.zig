@@ -15,7 +15,7 @@ pub const TaskState = enum(u8) {
 };
 
 /// Number of words the stack can hold
-pub const MAX_STACK_SIZE: usize = 100;
+pub const MAX_STACK_SIZE: usize = 1024;
 
 export var stacks: [MAX_TASKS][MAX_STACK_SIZE]u32 = undefined;
 

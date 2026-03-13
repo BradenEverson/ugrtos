@@ -61,7 +61,10 @@ pub const Scheduler = struct {
         CurrentTask.metadata.last_time_switched = now;
 
         if (CurrentTask.state == .ready) {
-            self.ready_queue.pushFront(CurrentTask) catch unreachable;
+            self.ready_queue.pushFront(CurrentTask) catch {
+                logger.log("Push Front Failed\r\n", .{});
+                @panic(":(");
+            };
         }
         CurrentTask = self.ready_queue.pop().?;
 
@@ -73,7 +76,7 @@ pub const Scheduler = struct {
         const new_delta = CurrentTask.getDelta(self.avg_system_wait, self.ready_queue.len);
 
         if (self.trace) {
-            CurrentTask.metadata.timestamp = time.getTimeMicros();
+            CurrentTask.metadata.timestamp = now;
 
             CurrentTask.metadata.total_run_time += CurrentTask.metadata.run_time;
             CurrentTask.metadata.total_ready_wait_time += CurrentTask.metadata.ready_wait_time;
@@ -98,7 +101,10 @@ pub const Scheduler = struct {
         self.tasks[self.task_count] = t_constructed;
         self.tasks[self.task_count].index = self.task_count;
 
-        self.ready_queue.pushFront(&self.tasks[self.task_count]) catch unreachable;
+        self.ready_queue.pushFront(&self.tasks[self.task_count]) catch {
+            logger.log("Registration failed bruh\r\n", .{});
+            @panic(":(");
+        };
 
         self.task_count += 1;
     }
