@@ -14,8 +14,13 @@ const sched = @import("main.zig");
 
 /// G-Code Parser
 pub fn gcodeParser() noreturn {
+    var buf: [64]u8 = undefined;
     while (true) {
-        c.HAL_GPIO_TogglePin(c.LD2_GPIO_Port, c.LD2_Pin);
-        sched.ioCall(.{ .SleepMs = 100 });
+        sched.ioCall(.{
+            .UartReceive = .{
+                .buf = &buf,
+                .uart = .uart4,
+            },
+        });
     }
 }

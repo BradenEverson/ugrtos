@@ -40,7 +40,7 @@ pub const QAgent = extern struct {
     const MIN_DELTA: usize = 5;
     const MAX_DELTA: usize = 200;
 
-    const STEP_SIZES = [_]usize{ 1, 2, 5, 10 };
+    const STEP_SIZES = [_]usize{ 1, 2, 5 };
 
     pub inline fn updateDelta(self: *QAgent, action: Action) void {
         const current = self.deltas[self.current_state];
@@ -48,34 +48,14 @@ pub const QAgent = extern struct {
         const step_idx = @intFromEnum(action);
         if (step_idx < 3) {
             const step = STEP_SIZES[step_idx];
-            self.deltas[self.current_state] = @max(MIN_DELTA, current - step);
+            self.deltas[self.current_state] = @max(MIN_DELTA, current -| step);
         } else if (step_idx > 3) {
             const step = STEP_SIZES[step_idx - 4];
             self.deltas[self.current_state] = @min(MAX_DELTA, current + step);
         }
     }
 
-    const FAIRNESS_PENALTY: f32 = 1;
-    const READY_WAIT_WEIGHT: f32 = 1;
     const IO_REWARD: f32 = 0.5;
-
-    const B: f32 = 0.002;
-    const K: f32 = 1;
-
-    pub inline fn exponentialDeltaPunishment(self: *QAgent) f32 {
-        const d: f32 = @floatFromInt(self.deltas[self.current_state]);
-
-        return B * std.math.exp(K * @abs(d - 10));
-    }
-
-    const D: f32 = 0.01;
-    const G: f32 = 0.5;
-
-    pub inline fn quadraticDeltaPunishment(self: *QAgent) f32 {
-        const d: f32 = @floatFromInt(self.deltas[self.current_state]);
-
-        return D * std.math.pow(f32, G * @abs(d - 15), 3);
-    }
 
     pub inline fn update(self: *QAgent, cpu: f32, ready_wait: f32, io_wait: f32, switches: f32) usize {
         const rng = rand.getRand();

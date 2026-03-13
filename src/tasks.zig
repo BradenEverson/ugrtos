@@ -51,3 +51,11 @@ pub fn cpuBlinky() noreturn {
         blockingWaitApprox(100);
     }
 }
+
+/// CPU Bound Blinky for LD2
+pub fn cpuBlinky2() noreturn {
+    while (true) {
+        c.HAL_GPIO_TogglePin(c.LD2_GPIO_Port, c.LD2_Pin);
+        blockingWaitApprox(100);
+    }
+}

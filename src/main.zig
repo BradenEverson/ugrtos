@@ -9,6 +9,7 @@ const heuristics = @import("scheduler/heuristics.zig");
 const io = @import("scheduler/io_manager.zig");
 
 const tasks = @import("tasks.zig");
+const printer_tasks = @import("printer_tasks.zig");
 const scheduler = @import("scheduler/scheduler.zig");
 
 const c = @cImport({
@@ -60,10 +61,13 @@ export fn buttonIt() void {
 export fn entry() callconv(.c) void {
     c.SET_TIME_DELTA(10);
 
-    sched.register(tasks.ioBlinky, 'B');
-    sched.register(tasks.ioBlinky2, 'D');
-    sched.register(tasks.ioBlinky3, 'E');
+    // sched.register(printer_tasks.gcodeParser, 'G');
+
+    // sched.register(tasks.ioBlinky, 'B');
+    // sched.register(tasks.ioBlinky2, 'D');
+    // sched.register(tasks.ioBlinky3, 'E');
     sched.register(tasks.cpuBlinky, 'C');
+    sched.register(tasks.cpuBlinky2, 'G');
 
     sched.start();
 }
