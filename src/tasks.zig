@@ -59,3 +59,10 @@ pub fn cpuBlinky2() noreturn {
         blockingWaitApprox(100);
     }
 }
+
+pub fn uartPrint() noreturn {
+    while (true) {
+        sched.ioCall(.{ .UartTransmit = .{ .msg = "Hello!\r\n", .uart = .uart2 } });
+        sched.ioCall(.{ .SleepMs = 1000 });
+    }
+}

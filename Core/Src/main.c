@@ -31,6 +31,8 @@ TIM_HandleTypeDef htim6;
 extern void entry(void);
 extern void sleepIt(void);
 extern void buttonIt(void);
+extern void uartRxIt(uint8_t);
+extern void uartTxIt(uint8_t);
 extern void gpioIt(unsigned, unsigned);
 
 void SystemClock_Config(void);
@@ -215,6 +217,10 @@ int main(void)
     SystemClock_Config();
 
     MX_GPIO_Init();
+
+    __HAL_RCC_UART4_CLK_ENABLE();
+    __HAL_RCC_UART5_CLK_ENABLE();
+
     MX_USART2_UART_Init();
     MX_UART4_Init();
     MX_UART5_Init();
@@ -302,6 +308,9 @@ static void MX_UART4_Init(void)
   {
     Error_Handler();
   }
+
+  HAL_NVIC_SetPriority(UART4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(UART4_IRQn);
   /* USER CODE BEGIN UART4_Init 2 */
 
   /* USER CODE END UART4_Init 2 */
@@ -333,8 +342,13 @@ static void MX_UART5_Init(void)
   huart5.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart5) != HAL_OK)
   {
-    Error_Handler();
+      HAL_UART_Transmit(&huart2, "UART5 Fail\r\n", 12, 1000);
+      Error_Handler();
   }
+
+  HAL_NVIC_SetPriority(UART5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(UART5_IRQn);
+
   /* USER CODE BEGIN UART5_Init 2 */
 
   /* USER CODE END UART5_Init 2 */
@@ -358,8 +372,12 @@ static void MX_USART2_UART_Init(void)
     huart2.Init.OverSampling = UART_OVERSAMPLING_16;
     if (HAL_UART_Init(&huart2) != HAL_OK)
     {
+        HAL_UART_Transmit(&huart2, "UART2 Fail\r\n", 12, 1000);
         Error_Handler();
     }
+
+    HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 /**
@@ -441,6 +459,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
 }
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == UART4) {
+        uartRxIt(4);
+    } else if (huart->Instance == UART5) {
+        uartRxIt(5);
+    } else if (huart->Instance == USART2) {
+        uartRxIt(2);
+    }
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == UART4) {
+        uartTxIt(4);
+    } else if (huart->Instance == UART5) {
+        uartTxIt(5);
+    } else if (huart->Instance == USART2) {
+        uartTxIt(2);
+    }
+}
+
+
 /**
  * @brief  This function is executed in case of error occurrence.
  * @retval None
@@ -448,8 +489,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
     __disable_irq();
-    while (1)
-    {
-        HAL_UART_Transmit(&huart2, "Critical Error :(\r\n", 19, 1000);
-    }
+    HAL_UART_Transmit(&huart2, "Critical Error :(\r\n", 19, 1000);
+    while (1) {}
 }

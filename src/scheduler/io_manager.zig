@@ -8,6 +8,7 @@ const c = @cImport({
     @cInclude("main.h");
 });
 
+extern var huart2: c.UART_HandleTypeDef;
 extern var huart4: c.UART_HandleTypeDef;
 extern var huart5: c.UART_HandleTypeDef;
 
@@ -42,12 +43,14 @@ pub const Gpio = extern struct {
     }
 };
 
-pub const Uart = enum {
-    uart4,
-    uart5,
+pub const Uart = enum(u8) {
+    uart2 = 2,
+    uart4 = 4,
+    uart5 = 5,
 
     pub fn getHuart(self: Uart) *c.UART_HandleTypeDef {
         return switch (self) {
+            .uart2 => &huart2,
             .uart4 => &huart4,
             .uart5 => &huart5,
         };

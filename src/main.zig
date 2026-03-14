@@ -50,6 +50,16 @@ export fn gpioIt(port: usize, pin: usize) void {
     sched.io_manager.gpioRetIt(gpio);
 }
 
+export fn uartRxIt(u: u8) void {
+    const uart: io.Uart = @enumFromInt(u);
+    sched.io_manager.uartReceiveRetIt(uart);
+}
+
+export fn uartTxIt(u: u8) void {
+    const uart: io.Uart = @enumFromInt(u);
+    sched.io_manager.uartTransmitRetIt(uart);
+}
+
 export fn buttonIt() void {
     scheduler.disable_irq();
     heuristics.sendAllData();
@@ -58,12 +68,15 @@ export fn buttonIt() void {
     @panic("We should not recover from this");
 }
 
+const msg: []const u8 = "Hello!\r\n";
+
 export fn entry() callconv(.c) void {
     c.SET_TIME_DELTA(10);
 
-    // sched.register(printer_tasks.gcodeParser, 'G');
+    sched.register(tasks.uartPrint, 'T');
 
-    sched.register(tasks.ioBlinky, 'B');
+    // sched.register(printer_tasks.gcodeParser, 'G');
+    // sched.register(tasks.ioBlinky, 'B');
     // sched.register(tasks.ioBlinky2, 'D');
     // sched.register(tasks.ioBlinky3, 'E');
     sched.register(tasks.cpuBlinky, 'C');

@@ -24,6 +24,10 @@
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
 
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart5;
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
 
@@ -108,6 +112,21 @@ void MemManage_Handler(void)
     /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
     /* USER CODE END W1_MemoryManagement_IRQn 0 */
   }
+}
+
+void UART4_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart4);
+}
+
+void UART5_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart5);
+}
+
+void USART2_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart2);
 }
 
 /**
