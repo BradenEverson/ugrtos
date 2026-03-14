@@ -32,15 +32,15 @@ pub const QAgent = extern struct {
     const NumActions = @typeInfo(Action).@"enum".fields.len;
 
     q_table: [TOTAL_STATES][NumActions]f32 = std.mem.zeroes([TOTAL_STATES][NumActions]f32),
-    deltas: [TOTAL_STATES]usize = [_]usize{10} ** TOTAL_STATES,
+    deltas: [TOTAL_STATES]u8 = [_]u8{10} ** TOTAL_STATES,
 
     current_state: usize = 0,
     last_action: Action = .Keep,
 
-    const MIN_DELTA: usize = 5;
-    const MAX_DELTA: usize = 200;
+    const MIN_DELTA: u8 = 5;
+    const MAX_DELTA: u8 = 200;
 
-    const STEP_SIZES = [_]usize{ 1, 2, 5 };
+    const STEP_SIZES = [_]u8{ 1, 2, 5 };
 
     pub inline fn updateDelta(self: *QAgent, action: Action) void {
         const current = self.deltas[self.current_state];
@@ -101,7 +101,7 @@ pub const QAgent = extern struct {
         self.current_state = next_state;
         self.updateDelta(self.last_action);
 
-        return self.deltas[self.current_state];
+        return @intCast(self.deltas[self.current_state]);
         // baseline test:
         // return 10;
     }
