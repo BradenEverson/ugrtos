@@ -58,12 +58,12 @@ pub const QAgent = extern struct {
     const IO_REWARD: f32 = 0.5;
 
     pub inline fn update(self: *QAgent, cpu: f32, ready_wait: f32, io_wait: f32, switches: f32) usize {
+        _ = switches;
         const rng = rand.getRand();
 
-        const throughput = 1 / (switches + 1);
         const fairness = 1.0 - ready_wait;
 
-        var reward = throughput + fairness;
+        var reward = fairness;
 
         const delta: f32 = @floatFromInt(self.deltas[self.current_state]);
         reward -= 0.001 * delta * delta;
