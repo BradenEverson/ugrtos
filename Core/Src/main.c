@@ -43,6 +43,11 @@ static void MX_UART4_Init(void);
 
 static size_t time_quantum;
 
+
+void clearOreFlag(UART_HandleTypeDef* huart) {
+    __HAL_UART_CLEAR_OREFLAG(huart);
+}
+
 void SetTimerMs(uint32_t req_ms) {
     req_ms *= 4;
     if (req_ms == 0) req_ms = 1;
@@ -217,9 +222,6 @@ int main(void)
     SystemClock_Config();
 
     MX_GPIO_Init();
-
-    __HAL_RCC_UART4_CLK_ENABLE();
-    __HAL_RCC_UART5_CLK_ENABLE();
 
     MX_USART2_UART_Init();
     MX_UART4_Init();

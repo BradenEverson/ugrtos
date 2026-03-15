@@ -61,48 +61,39 @@ pub const QAgent = extern struct {
         _ = switches;
         const rng = rand.getRand();
 
+        const delta_f: f32 = @floatFromInt(self.deltas[self.current_state]);
+        const efficiency = delta_f / (delta_f + 20.0);
         const fairness = 1.0 - ready_wait;
 
-        var reward = fairness;
-
-        const delta: f32 = @floatFromInt(self.deltas[self.current_state]);
-        reward -= 0.001 * delta * delta;
-
-        if (io_wait >= 0.3) {
-            reward += IO_REWARD;
-        }
+        var reward = fairness + efficiency;
+        if (io_wait >= 0.3) reward += IO_REWARD;
 
         const next_state = getState(cpu, io_wait);
         var max_q_next = self.q_table[next_state][0];
-
         inline for (1..NumActions) |i| {
-            if (self.q_table[next_state][i] > max_q_next) {
-                max_q_next = self.q_table[next_state][i];
-            }
+            if (self.q_table[next_state][i] > max_q_next) max_q_next = self.q_table[next_state][i];
         }
 
-        const curr = self.q_table[self.current_state][@intFromEnum(self.last_action)];
-        self.q_table[self.current_state][@intFromEnum(self.last_action)] = curr + ALPHA * (reward + (GAMMA * max_q_next) - curr);
+        const curr_q = self.q_table[self.current_state][@intFromEnum(self.last_action)];
+        self.q_table[self.current_state][@intFromEnum(self.last_action)] = curr_q + ALPHA * (reward + (GAMMA * max_q_next) - curr_q);
 
+        var next_action: Action = .Keep;
         if (rng.float(f32) < EPSILON) {
-            // Random exploration
-            self.last_action = @enumFromInt(rng.intRangeAtMost(usize, 0, NumActions - 1));
+            next_action = @enumFromInt(rng.intRangeAtMost(usize, 0, NumActions - 1));
         } else {
-            var best_action: Action = .Keep;
             inline for (1..NumActions) |i| {
-                if (self.q_table[next_state][i] > self.q_table[next_state][@intFromEnum(best_action)]) {
-                    best_action = @enumFromInt(i);
+                if (self.q_table[next_state][i] > self.q_table[next_state][@intFromEnum(next_action)]) {
+                    next_action = @enumFromInt(i);
                 }
             }
-
-            self.last_action = best_action;
         }
 
         self.current_state = next_state;
-        self.updateDelta(self.last_action);
+        self.last_action = next_action;
+        self.updateDelta(next_action);
 
         return self.deltas[self.current_state];
-        // baseline test:
+        // baseline
         // return 10;
     }
 };

@@ -51,12 +51,12 @@ export fn gpioIt(port: usize, pin: usize) void {
 }
 
 export fn uartRxIt(u: u8) void {
-    const uart: io.Uart = @enumFromInt(u);
+    const uart = io.Uart.fromU8(u).?;
     sched.io_manager.uartReceiveRetIt(uart);
 }
 
 export fn uartTxIt(u: u8) void {
-    const uart: io.Uart = @enumFromInt(u);
+    const uart = io.Uart.fromU8(u).?;
     sched.io_manager.uartTransmitRetIt(uart);
 }
 
@@ -68,12 +68,20 @@ export fn buttonIt() void {
     @panic("We should not recover from this");
 }
 
-const msg: []const u8 = "Hello!\r\n";
+extern var huart5: c.UART_HandleTypeDef;
+const msg = [1]u8{64};
+var buf: [64]u8 = undefined;
 
 export fn entry() callconv(.c) void {
     c.SET_TIME_DELTA(10);
 
-    // sched.register(printer_tasks.gcodeParser, 'G');
+    // _ = c.HAL_UART_Transmit(&huart5, @ptrCast(&msg), @truncate(msg.len), 1000);
+    // _ = c.HAL_UART_Receive_IT(&huart5, @ptrCast(&buf), @truncate(buf.len));
+    //
+    // while (true) {}
+
+    sched.register(printer_tasks.gcodeParser, 'G');
+
     // sched.register(tasks.uartPrint(), 'U');
     // sched.register(tasks.echo, 'E');
     sched.register(tasks.ioBlinky, 'B');

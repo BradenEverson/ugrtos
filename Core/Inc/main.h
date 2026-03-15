@@ -60,6 +60,8 @@ void SCHEDULER_DISABLE_IT();
 
 void ClearTimerITFlag();
 
+void clearOreFlag(UART_HandleTypeDef* huart);
+
 
 /* USER CODE BEGIN EFP */
 
