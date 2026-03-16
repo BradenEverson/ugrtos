@@ -52,12 +52,22 @@ pub const QAgent = extern struct {
     current_state: usize = 0,
     last_action: Action = .Keep,
 
+<<<<<<< Updated upstream
     rolling_cpu: f32 = 0,
     rolling_io: f32 = 0,
     rolling_ready_wait: f32 = 0,
     rolling_avg_wait: f32 = 0,
     rolling_num_tasks: f32 = 0,
     updates: usize = 0,
+=======
+    updates: usize = 0,
+    rolling_cpu: f32 = 0,
+    rolling_io: f32 = 0,
+    rolling_ready_wait: f32 = 0,
+
+    const MIN_DELTA: usize = 5;
+    const MAX_DELTA: usize = 200;
+>>>>>>> Stashed changes
 
     pub inline fn updateDelta(self: *QAgent) void {
         switch (self.last_action) {
@@ -71,6 +81,7 @@ pub const QAgent = extern struct {
         }
     }
 
+<<<<<<< Updated upstream
     pub inline fn exponentialDeltaPunishment(self: *QAgent) f32 {
         const d: f32 = @floatFromInt(self.deltas[self.current_state]);
 
@@ -85,6 +96,43 @@ pub const QAgent = extern struct {
         self.rolling_io += io_wait_here;
         self.rolling_avg_wait += avg_sys_wait_here;
         self.rolling_num_tasks += num_tasks_here;
+=======
+    const IO_REWARD: f32 = 0.5;
+    const TIME_UNTIL_UPDATE: usize = 2;
+
+    pub inline fn update(self: *QAgent, cpu_here: f32, ready_wait_here: f32, io_wait_here: f32, switches: f32) usize {
+        _ = switches;
+
+        self.updates += 1;
+
+        self.rolling_cpu += cpu_here;
+        self.rolling_ready_wait += ready_wait_here;
+        self.rolling_io += io_wait_here;
+
+        if (self.updates % TIME_UNTIL_UPDATE != 0) {
+            self.current_state = getState(cpu_here, io_wait_here);
+            return self.deltas[self.current_state];
+        }
+
+        const rng = rand.getRand();
+
+        const n: f32 = @floatFromInt(TIME_UNTIL_UPDATE);
+
+        const cpu = self.rolling_cpu / n;
+        const ready_wait = self.rolling_ready_wait / n;
+        const io_wait = self.rolling_io / n;
+
+        self.rolling_cpu = 0;
+        self.rolling_ready_wait = 0;
+        self.rolling_io = 0;
+
+        const delta_f: f32 = @floatFromInt(self.deltas[self.current_state]);
+        const efficiency = delta_f / (delta_f + 20.0);
+        const fairness = 1.0 - ready_wait;
+
+        var reward = fairness + efficiency + 0.001 * delta_f * delta_f;
+        if (io_wait >= 0.3) reward += IO_REWARD;
+>>>>>>> Stashed changes
 
         if (self.updates % TIME_UNTIL_UPDATE != 0) {
             return self.deltas[self.current_state];
