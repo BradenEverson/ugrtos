@@ -75,10 +75,6 @@ pub fn gcodeParser() noreturn {
     }
 }
 
-pub fn thermalMonitor() noreturn {
-    while (true) {}
-}
-
 pub fn eStop() noreturn {
     while (true) {
         sched.ioCall(.{
@@ -92,15 +88,47 @@ pub fn eStop() noreturn {
     }
 }
 
-pub fn blockingWaitApprox(n: usize) void {
-    for (0..n * 5000) |i| {
-        _ = i;
-    }
-}
-
 pub fn heartbeat() noreturn {
     while (true) {
         c.HAL_GPIO_TogglePin(c.GPIOB, c.GPIO_PIN_5);
-        blockingWaitApprox(500);
+        sched.ioCall(.{
+            .SleepMs = 1000,
+        });
     }
+}
+
+pub fn fanControl() noreturn {
+    const duty_cycle: u32 = 20;
+    while (true) {
+        c.HAL_GPIO_WritePin(c.GPIOB, c.GPIO_PIN_8, c.GPIO_PIN_SET);
+        sched.ioCall(.{ .SleepMs = duty_cycle });
+
+        c.HAL_GPIO_WritePin(c.GPIOB, c.GPIO_PIN_8, c.GPIO_PIN_RESET);
+        sched.ioCall(.{ .SleepMs = 100 - duty_cycle });
+    }
+}
+
+const TARGET_TEMP = 200.0;
+const HYSTERESIS = 2.0;
+
+pub fn thermalMonitor() noreturn {
+    var heater_on: bool = false;
+
+    while (true) {
+        const current_temp = readThermistor();
+
+        if (current_temp < (TARGET_TEMP - HYSTERESIS)) {
+            c.HAL_GPIO_WritePin(c.GPIOB, c.GPIO_PIN_0, c.GPIO_PIN_SET);
+            heater_on = true;
+        } else if (current_temp > (TARGET_TEMP + HYSTERESIS)) {
+            c.HAL_GPIO_WritePin(c.GPIOB, c.GPIO_PIN_0, c.GPIO_PIN_RESET);
+            heater_on = false;
+        }
+
+        sched.ioCall(.{ .SleepMs = 500 });
+    }
+}
+
+fn readThermistor() f32 {
+    return 195.0;
 }

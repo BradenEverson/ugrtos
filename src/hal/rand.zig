@@ -10,10 +10,9 @@ pub inline fn getRand() std.Random {
         return r.random();
     } else {
         prng = .init(@as(u64, time.getTimeMicros()));
-        // prng = .init(0xDEAD);
-        // prng = .init(0xBEEF);
+        // prng = .init(0x90908797);
         // prng = .init(0xBBBB);
-        // prng = .init(0xFEEF_FEEF_FEEF_FEEF);
+        // prng = .init(0x02931899);
         return prng.?.random();
     }
 }

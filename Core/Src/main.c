@@ -216,8 +216,8 @@ void ClearTimerITFlag() {
  */
 int main(void)
 {
-
     HAL_Init();
+    __HAL_FLASH_PREFETCH_BUFFER_DISABLE();
 
     SystemClock_Config();
 

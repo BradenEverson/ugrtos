@@ -10,7 +10,7 @@ const ALPHA: f32 = 0.1;
 const GAMMA: f32 = 0.6;
 
 /// Exploration rate, probability we try a random action
-const EPSILON: f32 = 0.15;
+const EPSILON: f32 = 0.25;
 
 /// Number of times we split up the CPU utilization percents
 /// into discrete buckets

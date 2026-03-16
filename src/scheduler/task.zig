@@ -6,7 +6,7 @@ const QAgent = @import("q_agent.zig").QAgent;
 const logger = @import("../hal/logger.zig");
 
 /// Number of tasks we support at a time
-pub const MAX_TASKS: usize = 5;
+pub const MAX_TASKS: usize = 6;
 var tasks: usize = 0;
 
 pub const TaskState = enum(u8) {
@@ -15,7 +15,7 @@ pub const TaskState = enum(u8) {
 };
 
 /// Number of words the stack can hold
-pub const MAX_STACK_SIZE: usize = 1024;
+pub const MAX_STACK_SIZE: usize = 2048;
 
 export var stacks: [MAX_TASKS][MAX_STACK_SIZE]u32 = undefined;
 
@@ -45,7 +45,7 @@ pub const TaskData = extern struct {
 };
 
 pub const Task = extern struct {
-    sp: *u32,
+    sp: *usize,
     id: u8,
     index: usize = 0,
     agent: QAgent = .{},
@@ -96,7 +96,7 @@ fn initStack(stack: *[MAX_STACK_SIZE]u32) void {
     stack[MAX_STACK_SIZE - 1] = 0x0100_0000; // Thumb bit
 
     stack[MAX_STACK_SIZE - 2] = 0xDEAD_BEEF; // PC
-    stack[MAX_STACK_SIZE - 3] = 0xFEEF_DEEF; // Link Register
+    stack[MAX_STACK_SIZE - 3] = 0xFFFFFFF9; // Link Register
 
     stack[MAX_STACK_SIZE - 4] = 0xAB12_BA12; // R12
 
