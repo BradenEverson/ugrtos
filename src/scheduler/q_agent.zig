@@ -10,12 +10,15 @@ const ALPHA: f32 = 0.01;
 const GAMMA: f32 = 0.8;
 
 /// Exploration rate, probability we try a random action
-const EPSILON: f32 = 0.85;
+const EPSILON: f32 = 0.35;
+
+/// Epsilon Decay Rate, every update it is multiplied by this
+const DECAY: f32 = 0.999;
 
 /// Number of times we split up the CPU utilization percents
 /// into discrete buckets
 /// Ex: 10 buckets gives us 0-10%, 11-20%, ...
-const BUCKETS: usize = 10;
+const BUCKETS: usize = 5;
 const BUCKETS_F: f32 = @floatFromInt(BUCKETS);
 
 const TOTAL_STATES = BUCKETS * 2 * 2;
@@ -102,7 +105,7 @@ pub const QAgent = extern struct {
         self.last_action = next_action;
         self.updateDelta(next_action);
 
-        self.epsilon *= 0.9999;
+        self.epsilon *= DECAY;
         return self.deltas[self.current_state];
         // baseline
         // return 10;
