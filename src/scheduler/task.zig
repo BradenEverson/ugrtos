@@ -17,7 +17,7 @@ pub const TaskState = enum(u8) {
 /// Number of words the stack can hold
 pub const MAX_STACK_SIZE: usize = 2048;
 
-export var stacks: [MAX_TASKS][MAX_STACK_SIZE]u32 = undefined;
+export var stacks: [MAX_TASKS][MAX_STACK_SIZE]u32 align(8) = undefined;
 
 pub const TaskData = extern struct {
     timestamp: u32 = 0,
@@ -55,19 +55,28 @@ pub const Task = extern struct {
 
     pub fn init(task: *const fn () noreturn, id: u8) Task {
         const stack = &stacks[tasks];
-        initStack(stack);
 
-        stack[MAX_STACK_SIZE - 2] = @intFromPtr(task);
+        const stack_top = @intFromPtr(stack) + (MAX_STACK_SIZE * 4);
+        const aligned_top = stack_top & ~@as(usize, 0x07);
+        var sp = @as([*]u32, @ptrFromInt(aligned_top));
+
+        sp -= 1;
+        sp[0] = 0x0100_0000;
+        sp -= 1;
+        sp[0] = @intFromPtr(task);
+        sp -= 1;
+        sp[0] = 0xFFFFFFFD;
+        sp -= 5;
+
+        sp -= 8;
 
         tasks += 1;
-
         return Task{
             .id = id,
-            .sp = &stack[MAX_STACK_SIZE - 16],
+            .sp = @ptrCast(sp),
             .metadata = .{ .task_id = id },
         };
     }
-
     pub inline fn getDelta(self: *Task, switches: f32, len: usize) usize {
         self.metadata.total_run_time += self.metadata.run_time;
         self.metadata.total_ready_wait_time += self.metadata.ready_wait_time;
@@ -97,7 +106,7 @@ fn initStack(stack: *[MAX_STACK_SIZE]u32) void {
     stack[MAX_STACK_SIZE - 1] = 0x0100_0000; // Thumb bit
 
     stack[MAX_STACK_SIZE - 2] = 0xDEAD_BEEF; // PC
-    stack[MAX_STACK_SIZE - 3] = 0xFFFFFFF9; // Link Register
+    stack[MAX_STACK_SIZE - 3] = 0xFFFFFFFD; // Link Register
 
     stack[MAX_STACK_SIZE - 4] = 0xAB12_BA12; // R12
 
@@ -114,4 +123,7 @@ fn initStack(stack: *[MAX_STACK_SIZE]u32) void {
     stack[MAX_STACK_SIZE - 14] = 0x6060_6060; // R6
     stack[MAX_STACK_SIZE - 15] = 0x5050_5050; // R5
     stack[MAX_STACK_SIZE - 16] = 0x4444_0440; // R4
+
+    stack[0] = 0xBAD0_BAD0;
+    stack[1] = 0xBAD0_BAD0;
 }

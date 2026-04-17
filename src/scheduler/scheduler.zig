@@ -78,6 +78,7 @@ pub const Scheduler = struct {
         }
 
         CurrentTask = self.ready_queue.pop().?;
+
         self.no_curr_task = false;
 
         CurrentTask.metadata.ready_wait_time = time.getTimeMicros() - CurrentTask.metadata.last_time_switched;

@@ -13,10 +13,10 @@ pub inline fn getRand() std.Random {
         // prng = .init(0x90908797);
         // prng = .init(0xFBFBFBF);
         // prng = .init(0x0BBFDFD9);
-        // prng = .init(0xC238945B);
+        prng = .init(0xC238945B);
         // prng = .init(0xDEAD_BEEF_A201);
         // prng = .init(0xEEEEEEE);
-        prng = .init(0x4);
+        // prng = .init(0x4);
 
         // prng = .init(0x9); // THIS WORKS FOR CVG
         // prng = .init(0x4);

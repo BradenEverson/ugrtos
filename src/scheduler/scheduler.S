@@ -5,6 +5,7 @@
 
 .global SchedulerStart
 .global TIM2_IRQHandler
+.global PendSV_Handler
 
 .extern CurrentTask
 .extern ScheduleNext
@@ -13,38 +14,64 @@
 .section .text.SchedulerStart
 .type SchedulerStart, %function
 SchedulerStart:
-    cpsid I              // disable interrupts
-    ldr r0, =CurrentTask // load current task ptr ptr
-    ldr r1, [r0]         // load current task ptr
-    ldr sp, [r1]         // load field 1 of current task, SP
+    cpsid i
+    ldr r0, =0xE000ED22
+    ldr r1, =0xFF
+    strb r1, [r0]
 
-    pop {r4-r11}         // load regs 4-11
-    pop {r0-r3}          // load regs 0-3
-    pop {r12}            // load temp reg
-    pop {lr}             // load lr (discard)
-    pop {lr}             // load pc to lr
-    pop {r1}             // discard the thumb bit psr
-    cpsie I              // enable interrupts
+    ldr r0, =CurrentTask
+    ldr r1, [r0]
+    ldr r2, [r1]
+    
+    msr psp, r2
+    mov r0, #2
+    msr control, r0
+    isb
+
+    pop {r4-r11}
+    pop {r0}
+    pop {r0, r1, r2, r3, r12}
+    pop {lr}
+    pop {r0}
+    
+    cpsie i
     bx lr
 
 .section .text.TIM2_IRQHandler
 .type TIM2_IRQHandler, %function
 TIM2_IRQHandler:
-    cpsid I              // disable interrupts
-    push {r4-r11}
-    ldr r0, =CurrentTask // load current task ptr ptr
-    ldr r1, [r0]         // load current task ptr
-    str sp, [r1]         // store the new sp
+    push {lr}
+    bl ClearTimerITFlag
+    
+    // Trigger PendSV by setting PENDSVSET bit in ICSR
+    ldr r0, =0xE000ED04
+    ldr r1, =(1 << 28)
+    str r1, [r0]
+    
+    pop {lr}
+    bx lr
 
-    push {r0, lr}        // Save r0, lr
-    bl ClearTimerITFlag  // clear the timer IT flag
-    bl ScheduleNext      // schedule the next task
-    pop {r0, lr}         // restore regs
+.section .text.PendSV_Handler
+.type PendSV_Handler, %function
+PendSV_Handler:
+    cpsid i
+    
+    mrs r0, psp
+    stmdb r0!, {r4-r11}
+    ldr r1, =CurrentTask
+    ldr r2, [r1]
+    str r0, [r2]
 
-    ldr r0, =CurrentTask // load current task ptr ptr
-    ldr r1, [r0]         // new CurrentTask
-    ldr sp, [r1]         // deref the stack pointer
+    push {lr}
+    bl ScheduleNext
+    pop {lr}
 
-    pop {r4-r11}         // restore registers
-    cpsie I              // enable interrupts again
-    bx lr                // go back to lr
+    ldr r1, =CurrentTask
+    ldr r2, [r1]
+    ldr r0, [r2]
+    ldmia r0!, {r4-r11}
+    msr psp, r0
+    
+    cpsie i
+    bx lr
+
