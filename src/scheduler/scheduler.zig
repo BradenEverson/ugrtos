@@ -49,6 +49,7 @@ pub const Scheduler = struct {
     io_manager: IoManager = .{},
 
     pub inline fn ioCall(self: *Scheduler, call: IoCall) void {
+        disable_irq();
         self.io_manager.ioCall(CurrentTask, call);
         ForcePreempt();
     }
@@ -86,11 +87,6 @@ pub const Scheduler = struct {
 
         if (self.trace) {
             CurrentTask.metadata.timestamp = time.getTimeMicros();
-
-            CurrentTask.metadata.total_run_time += CurrentTask.metadata.run_time;
-            CurrentTask.metadata.total_ready_wait_time += CurrentTask.metadata.ready_wait_time;
-            CurrentTask.metadata.total_io_wait_time += CurrentTask.metadata.io_wait_time;
-
             heuristics.addData(CurrentTask.metadata);
         }
 

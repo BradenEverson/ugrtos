@@ -76,10 +76,10 @@ var buf: [64]u8 = undefined;
 export fn entry() callconv(.c) void {
     c.SET_TIME_DELTA(10);
 
-    sched.register(cvg_tasks.canBusLogger, 'c');
-    sched.register(cvg_tasks.cloudSync, 's');
-    sched.register(cvg_tasks.edgeVisionInference, 'V');
-    sched.register(cvg_tasks.infotainmentUI, 'U');
+    // sched.register(cvg_tasks.canBusLogger, 'c');
+    // sched.register(cvg_tasks.cloudSync, 's');
+    // sched.register(cvg_tasks.edgeVisionInference, 'V');
+    // sched.register(cvg_tasks.infotainmentUI, 'U');
 
     // sched.register(printer_tasks.eStop, 'e');
     // sched.register(printer_tasks.thermalMonitor, 'T');
@@ -92,7 +92,7 @@ export fn entry() callconv(.c) void {
     sched.register(tasks.ioBlinky, 'B');
     // sched.register(tasks.ioBlinky2, 'D');
     // sched.register(tasks.ioBlinky3, 'E');
-    // sched.register(tasks.cpuBlinky, 'C');
+    sched.register(tasks.cpuBlinky, 'C');
     // sched.register(tasks.cpuBlinky2, 'G');
 
     sched.start();

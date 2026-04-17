@@ -4,6 +4,7 @@ const std = @import("std");
 
 pub const FixedBufferError = error{
     BufferFull,
+    IndexOutOfBounds,
 };
 
 pub fn FixedBufferArrayList(T: type, max: comptime_int) type {

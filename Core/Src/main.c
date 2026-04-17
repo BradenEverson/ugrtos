@@ -429,6 +429,7 @@ static void MX_GPIO_Init(void)
 
 void ForcePreempt(void) {
     htim2.Instance->EGR = TIM_EGR_UG;
+    __asm__("cpsie i");
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
